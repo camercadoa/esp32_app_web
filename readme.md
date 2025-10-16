@@ -1,289 +1,226 @@
 # 🎛️ Sistema de Control Motor DC y LEDs con ESP32
 
+[![Python](https://img.shields.io/badge/Python-33.4%25-blue?logo=python)]
+[![HTML](https://img.shields.io/badge/HTML-30.4%25-red?logo=html5)]
+[![JavaScript](https://img.shields.io/badge/JavaScript-25.9%25-yellow?logo=javascript)]
+[![CSS](https://img.shields.io/badge/CSS-10.3%25-blueviolet?logo=css3)]
+
+---
+
 ## 📋 Descripción del Proyecto
 
-Sistema completo de monitoreo y control que integra:
-- **ESP32** conectado a WiFi que controla un motor DC y 2 LEDs
-- **API REST** en Flask que gestiona la base de datos
-- **Aplicación Web** para visualizar el historial en tiempo real
-- **Base de datos MySQL** en Aiven (nube)
+Sistema completo de monitoreo y control que integra hardware y software:
+
+- **ESP32** conectado vía WiFi para controlar un motor DC y dos LEDs.
+- **API REST** en Flask, que gestiona todas las acciones y el acceso a la base de datos.
+- **Aplicación Web** moderna para visualizar y controlar el sistema en tiempo real.
+- **Base de datos MySQL** de prueba en la nube (Aiven).
+
+Este sistema es ideal para prácticas de IoT, automatización y monitoreo remoto.
+
+---
+
+## 📦 Tecnologías Principales
+
+| Componente           | Tecnología         |
+|----------------------|-------------------|
+| Backend/API          | Python (Flask)    |
+| Frontend Web         | HTML, CSS, JS     |
+| Microcontrolador     | ESP32 (Arduino C++)|
+| Base de datos        | MySQL (Aiven)     |
 
 ---
 
 ## 🚀 Instalación
 
-### 1️⃣ Configurar el entorno Python
+### 1️⃣ Configuración del entorno Python
 
 ```bash
-# Crear entorno virtual
 python -m venv venv
-
-# Activar entorno virtual
+# Activar el entorno
 # En Windows:
 venv\Scripts\activate
 # En Linux/Mac:
 source venv/bin/activate
 
-# Instalar dependencias
 pip install -r requirements.txt
 ```
 
-### 2️⃣ Configurar la Base de Datos
-
-La base de datos ya está configurada en Aiven. Si necesitas recrear las tablas:
-
-```bash
-python init_db.py
-```
-
-Esto creará:
-- Tabla `usuarios` (con usuario admin/1234)
-- Tabla `acciones` (historial de eventos)
-
-### 3️⃣ Configurar el ESP32
+### 2️⃣ Configuración del ESP32
 
 **Requisitos:**
-- Arduino IDE instalado
-- ESP32 configurado en Arduino IDE
-- Bibliotecas necesarias:
-  - `WiFi.h` (incluida en ESP32)
-  - `HTTPClient.h` (incluida en ESP32)
-  - `Wire.h`
-  - `LiquidCrystal_I2C`
+
+- Arduino IDE y ESP32 configurado
+- Bibliotecas: `WiFi.h`, `HTTPClient.h`, `Wire.h`, `LiquidCrystal_I2C`
 
 **Pasos:**
 
-1. Abre el archivo `ESP32_WiFi_API.ino` en Arduino IDE
+1. Abre `esp32/ESP32_WiFi_API.ino` en Arduino IDE.
+2. Cambia las credenciales WiFi:
 
-2. **Cambia las credenciales WiFi:**
    ```cpp
-   const char* ssid = "TU_NOMBRE_WIFI";        // ⚠️ Tu red WiFi
-   const char* password = "TU_PASSWORD_WIFI";   // ⚠️ Tu contraseña
+   const char* ssid = "TU_NOMBRE_WIFI";
+   const char* password = "TU_PASSWORD_WIFI";
    ```
 
-3. **Encuentra la IP de tu computadora:**
-   
-   En Windows (CMD):
-   ```bash
-   ipconfig
-   ```
-   Busca "Dirección IPv4" (ejemplo: 192.168.1.100)
-   
-   En Linux/Mac (Terminal):
-   ```bash
-   ifconfig
-   # o
-   ip addr show
-   ```
+3. Encuentra la IP de tu computadora (usa `ipconfig` o `ifconfig`).
+4. Cambia la URL de la API:
 
-4. **Cambia la URL de la API:**
    ```cpp
-   const char* apiURL = "http://192.168.1.100:5000/api/acciones";
+   const char* apiURL = "http://TU_IP_LOCAL:5000/api/acciones";
    ```
-   Reemplaza `192.168.1.100` con TU IP
 
-5. Sube el código al ESP32
+5. Sube el código al ESP32.
 
 ---
 
 ## 🎮 Uso del Sistema
 
-### 1️⃣ Iniciar la API
+### 1️⃣ Inicia la API
 
 ```bash
-python api.py
+python backend/app.py
 ```
 
 Verás:
-```
+
+```bash
 🚀 API iniciada en http://0.0.0.0:5000
-📡 Endpoints disponibles:
-   - POST /api/acciones (registrar acción)
-   - GET  /api/acciones (obtener historial)
-   - GET  /api/estadisticas (estadísticas)
-   - GET  /api/estado (estado actual)
-   - GET  /api/health (verificar conexión)
+📡 Endpoints disponibles...
 ```
 
-### 2️⃣ Abrir la Aplicación Web
+### 2️⃣ Abre la página en el navegador
 
-1. Abre el archivo `index.html` en tu navegador
+- Por defecto se carga en la ruta `http://127.0.0.1:5000/`
 
-2. O para un servidor local:
-   ```bash
-   # Python 3
-   python -m http.server 8000
-   ```
-   Luego ve a: `http://localhost:8000`
+> **IMPORTANTE:**
+> Si la web no carga datos, edita `backend\static\js\main.js` (línea 1):
+>
+> ```javascript
+> const API_URL = 'http://localhost:5000/api';
+> ```
+>
+> Cambia `localhost` por la IP de tu PC si accedes desde otro dispositivo.
 
-3. **IMPORTANTE:** Si la página no carga datos, edita `index.html` línea 308:
-   ```javascript
-   const API_URL = 'http://localhost:5000/api';
-   ```
-   Cambia `localhost` por la IP de tu computadora si es necesario
+### 3️⃣ Enciende el ESP32
 
-### 3️⃣ Encender el ESP32
+El ESP32:
 
-El ESP32 automáticamente:
-1. Se conecta a WiFi
-2. Muestra su IP en el LCD
-3. Envía cada acción a la API
-4. Actualiza la base de datos
+- Se conecta a WiFi
+- Muestra su IP en el LCD
+- Envía cada acción a la API
+- La API registra en la base de datos
 
 ---
 
 ## 🔌 Conexiones del Hardware
 
-### Motor DC
-- Motor Pin 1 → GPIO 12
-- Motor Pin 2 → GPIO 14
-- Enable (PWM) → GPIO 13
-
-### LEDs
-- LED Verde → GPIO 15
-- LED Rojo → GPIO 2
-
-### Botones
-- Botón Motor ON → GPIO 27
-- Botón Motor OFF → GPIO 26
-- Botón LED Verde → GPIO 25
-- Botón LED Rojo → GPIO 33
-
-### LCD I2C
-- SDA → GPIO 21
-- SCL → GPIO 22
-- Dirección I2C: 0x27
+| Elemento         | GPIO        |
+|------------------|------------|
+| Motor Pin 1      | 12         |
+| Motor Pin 2      | 14         |
+| Enable (PWM)     | 13         |
+| LED Verde        | 15         |
+| LED Rojo         | 2          |
+| Botón Motor ON   | 27         |
+| Botón Motor OFF  | 26         |
+| Botón LED Verde  | 25         |
+| Botón LED Rojo   | 33         |
+| LCD I2C SDA      | 21         |
+| LCD I2C SCL      | 22         |
+| Dirección I2C    | 0x27       |
 
 ---
 
 ## 🌐 Endpoints de la API
 
-### 1. Registrar Acción
-```http
-POST /api/acciones
-Content-Type: application/json
+- **Registrar Acción**
 
-{
-    "usuario_id": 1,
-    "dispositivo": "MOTOR",
-    "accion": "ENCENDER"
-}
-```
+  ```http
+  POST /api/acciones
+  Content-Type: application/json
 
-**Dispositivos válidos:** `MOTOR`, `LED_VERDE`, `LED_ROJO`  
-**Acciones válidas:** `ENCENDER`, `APAGAR`
+  {
+      "usuario_id": 1,
+      "dispositivo": "MOTOR",
+      "accion": "ENCENDER"
+  }
+  ```
 
-### 2. Obtener Historial
-```http
-GET /api/acciones?limite=100&usuario_id=1
-```
+- **Obtener Historial**
 
-### 3. Obtener Estadísticas
-```http
-GET /api/estadisticas
-```
+  ```http
+  GET /api/acciones?limite=100&usuario_id=1
+  ```
 
-### 4. Estado Actual
-```http
-GET /api/estado
-```
+- **Obtener Estadísticas**
 
-### 5. Health Check
-```http
-GET /api/health
-```
+  ```http
+  GET /api/estadisticas
+  ```
+
+- **Estado Actual**
+
+  ```http
+  GET /api/estado
+  ```
+
+- **Health Check**
+
+  ```http
+  GET /api/health
+  ```
 
 ---
 
 ## 📊 Características de la Aplicación Web
 
-✅ **Monitoreo en tiempo real** (actualización cada 5 segundos)  
-✅ **Visualización del estado actual** de cada dispositivo  
-✅ **Historial completo** con búsqueda en tiempo real  
-✅ **Estadísticas** de uso por dispositivo  
-✅ **Indicador de conexión** con la API  
-✅ **Diseño responsive** (funciona en móviles)  
-✅ **Interfaz moderna** con animaciones
+- ✅ Monitoreo en tiempo real
+- ✅ Visualización de estado actual por dispositivo
+- ✅ Historial completo con búsqueda instantánea
+- ✅ Estadísticas de uso
+- ✅ Indicador de conexión con la API
+- ✅ Interfaz responsive y moderna
 
 ---
 
 ## 🐛 Solución de Problemas
 
 ### El ESP32 no se conecta a WiFi
-- ✅ Verifica las credenciales WiFi
-- ✅ Asegúrate que el ESP32 esté en rango
-- ✅ Verifica que la red sea 2.4GHz (el ESP32 no soporta 5GHz)
+
+- Verifica las credenciales y el rango de la red
+- Usa solo redes 2.4GHz
 
 ### La API no responde
-- ✅ Verifica que Python esté ejecutándose: `python api.py`
-- ✅ Revisa el firewall (debe permitir puerto 5000)
-- ✅ Verifica la conexión a Internet (para Aiven)
 
-### La aplicación web no carga datos
-- ✅ Abre la consola del navegador (F12) para ver errores
-- ✅ Verifica que la API esté corriendo
-- ✅ Cambia `localhost` por la IP real en `index.html`
-- ✅ Desactiva CORS temporalmente o usa la extensión "CORS Unblock"
+- Revisa firewall y acceso al puerto 5000
+- Comprueba la conexión a Internet para Aiven
 
-### El ESP32 envía pero no se guarda en BD
-- ✅ Revisa la URL de la API en el código del ESP32
-- ✅ Verifica que la IP sea correcta
-- ✅ Revisa el Monitor Serial para ver errores HTTP
-- ✅ Prueba la API con Postman o curl primero
+### La web no carga datos
 
----
+- Revisa consola de navegador (F12)
+- Comprueba que la API esté activa
+- Desactiva CORS temporalmente o usa extensión "CORS Unblock"
 
-## 📱 Capturas de Pantalla
+### El ESP32 no guarda en BD
 
-La aplicación web muestra:
-
-1. **Barra de estado** con indicador de conexión
-2. **Tarjetas de dispositivos** con estado en tiempo real
-3. **Tabla de historial** con búsqueda
-4. **Estadísticas** de uso
+- Revisa la URL de la API en el código
+- Verifica la IP y errores en el Monitor Serial
+- Prueba la API con Postman o curl
 
 ---
 
 ## 🔒 Seguridad
 
-⚠️ **IMPORTANTE:** Este proyecto es para desarrollo/educación. Para producción:
+⚠️ **Advertencia:** Este proyecto es para propósitos educativos. Para producción:
 
-- Cambia las credenciales de la base de datos
+- Cambia credenciales de la base de datos y agrégalos a un archivo `.env`
 - Implementa autenticación JWT en la API
-- Usa HTTPS en lugar de HTTP
-- Valida todas las entradas
-- Implementa rate limiting
+- Usa HTTPS
+- Valida y sanitiza todas las entradas
+- Implementa control de acceso y rate limiting
 
----
-
-## 👥 Créditos
-
-Proyecto desarrollado como parte del curso de sistemas embebidos.  
-Base de datos: Aiven MySQL  
-Framework web: Flask + HTML/CSS/JS  
-Hardware: ESP32, Motor DC, LEDs, LCD I2C
-
----
-
-## 📝 Notas Adicionales
-
-- La aplicación de escritorio PyQt6 sigue funcionando normalmente
-- Puedes usar ambas interfaces simultáneamente
-- Los datos se sincronizan automáticamente
-- La zona horaria está configurada para Colombia (America/Bogota)
-
----
-
-## 🆘 Soporte
-
-Si tienes problemas:
-
-1. Revisa el Monitor Serial del ESP32
-2. Revisa la consola de la API (Python)
-3. Revisa la consola del navegador (F12)
-4. Verifica que todos los servicios estén corriendo
-
-**Comandos útiles para diagnóstico:**
+**Comandos útiles:**
 
 ```bash
 # Ver puertos en uso (Windows)
@@ -296,3 +233,7 @@ curl http://localhost:5000/api/health
 ipconfig  # Windows
 ifconfig  # Linux/Mac
 ```
+
+---
+
+¿Tienes dudas o sugerencias? ¡Abre un issue!
