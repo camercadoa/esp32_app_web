@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+{% block title %}Dashboard - Monitor de Control{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Título -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h3 class="fw-bold mb-0">
+            <i class="bi bi-speedometer2 me-2 text-primary"></i>Panel de Estadísticas
+        </h3>
+        <button class="btn btn-sm btn-outline-dark" onclick="cargarIndicadores()">
+            <i class="bi bi-arrow-clockwise me-1"></i>Actualizar
+        </button>
+    </div>
+
+    <!-- Indicadores (cards) -->
+    <div class="row g-3 mb-4" id="indicadoresContainer">
+        <div class="col-md-2 col-6">
+            <div class="card border-0 shadow-sm rounded-4 text-center p-3">
+                <small class="text-muted">Total acciones</small>
+                <h4 id="cardTotalAcciones" class="fw-bold mb-0">-</h4>
+            </div>
+        </div>
+        <div class="col-md-2 col-6">
+            <div class="card border-0 shadow-sm rounded-4 text-center p-3">
+                <small class="text-muted">Encender (%)</small>
+                <h4 id="cardEncender" class="fw-bold text-success mb-0">-</h4>
+            </div>
+        </div>
+        <div class="col-md-2 col-6">
+            <div class="card border-0 shadow-sm rounded-4 text-center p-3">
+                <small class="text-muted">Apagar (%)</small>
+                <h4 id="cardApagar" class="fw-bold text-danger mb-0">-</h4>
+            </div>
+        </div>
+        <div class="col-md-3 col-6">
+            <div class="card border-0 shadow-sm rounded-4 text-center p-3">
+                <small class="text-muted">Dispositivo más usado</small>
+                <h5 id="cardMasUsado" class="fw-bold text-primary mb-0">-</h5>
+            </div>
+        </div>
+        <div class="col-md-3 col-6">
+            <div class="card border-0 shadow-sm rounded-4 text-center p-3">
+                <small class="text-muted">Usuarios activos (24h)</small>
+                <h4 id="cardUsuarios" class="fw-bold text-info mb-0">-</h4>
+            </div>
+        </div>
+    </div>
+
+    <!-- Gráficos -->
+    <div class="row g-4">
+        <div class="col-lg-6">
+            {% include "dashboard/partials/grafico_acciones.html" %}
+        </div>
+        <div class="col-lg-6">
+            {% include "dashboard/partials/grafico_dispositivos.html" %}
+        </div>
+        <div class="col-lg-6">
+            {% include "dashboard/partials/grafico_tiempo.html" %}
+        </div>
+        <div class="col-lg-6">
+            {% include "dashboard/partials/grafico_usuarios.html" %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+    cargarIndicadores();
+    cargarGraficos();
+});
+
+// =======================
+// 📊 Cargar indicadores
+// =======================
+async function cargarIndicadores() {
+    try {
+        const res = await fetch("/api/estadisticas/indicadores");
+        const data = await res.json();
+        if (!data.success) throw new Error("Error al obtener indicadores");
+
+        const i = data.indicadores;
+        document.getElementById("cardTotalAcciones").textContent = i.total_acciones;
+        document.getElementById("cardEncender").textContent = `${i.porcentaje_encender}%`;
+        document.getElementById("cardApagar").textContent = `${i.porcentaje_apagar}%`;
+        document.getElementById("cardMasUsado").textContent = i.dispositivo_mas_usado;
+        document.getElementById("cardUsuarios").textContent = i.usuarios_activos_24h;
+    } catch (err) {
+        console.error("❌ Error en cargarIndicadores:", err);
+    }
+}
+
+// =======================
+// 📈 Cargar todos los gráficos
+// =======================
+function cargarGraficos() {
+    cargarGraficoAcciones();
+    cargarGraficoDispositivos();
+    cargarGraficoTiempo();
+    cargarGraficoUsuarios();
+}
+</script>
+{% endblock %}

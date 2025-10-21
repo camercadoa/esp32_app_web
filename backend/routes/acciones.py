@@ -1,85 +1,112 @@
 from flask import Blueprint, request, jsonify
 from config.database import get_connection
-from datetime import datetime
-import pytz
 
-acciones_bp = Blueprint('acciones', __name__)
+acciones_bp = Blueprint('acciones', __name__, url_prefix='/api/acciones')
 
 
-@acciones_bp.route('/api/acciones', methods=['POST'])
+# ------------------------------------------------------------
+# 📍 Registrar acción (ENCENDER / APAGAR)
+# ------------------------------------------------------------
+@acciones_bp.route('/registrar', methods=['POST'])
 def registrar_accion():
+    data = request.get_json()
+    usuario_id = data.get('usuario_id')
+    dispositivo_id = data.get('dispositivo_id')
+    accion = data.get('accion')
+
+    if not all([usuario_id, dispositivo_id, accion]):
+        return jsonify({"error": "Faltan datos obligatorios"}), 400
+
     try:
-        data = request.get_json()
-        usuario_id = data.get('usuario_id', 1)
-        dispositivo = data.get('dispositivo')
-        accion = data.get('accion')
+        connection = get_connection()
+        with connection.cursor() as cursor:
+            # Verificar estado actual del dispositivo
+            cursor.execute(
+                "SELECT estado_actual FROM dispositivos WHERE id = %s", (dispositivo_id,))
+            dispositivo = cursor.fetchone()
+            if not dispositivo:
+                return jsonify({"error": "Dispositivo no encontrado"}), 404
 
-        if not dispositivo or not accion:
-            return jsonify({"error": "Faltan datos"}), 400
+            estado_actual = dispositivo['estado_actual']
 
-        dispositivos_validos = ['MOTOR', 'LED_VERDE', 'LED_ROJO']
-        acciones_validas = ['ENCENDER', 'APAGAR']
-
-        if dispositivo not in dispositivos_validos or accion not in acciones_validas:
-            return jsonify({"error": "Valores inválidos"}), 400
-
-        conexion = get_connection()
-        with conexion.cursor() as cursor:
-            cursor.execute("""
-                INSERT INTO acciones (usuario_id, dispositivo, accion)
-                VALUES (%s, %s, %s)
-            """, (usuario_id, dispositivo, accion))
-        conexion.commit()
-        conexion.close()
-
-        return jsonify({"success": True, "message": "Acción registrada correctamente"}), 201
-
-    except Exception as e:
-        print(f"Error: {e}")
-        return jsonify({"error": str(e)}), 500
-
-
-@acciones_bp.route('/api/acciones', methods=['GET'])
-def obtener_acciones():
-    try:
-        limite = request.args.get('limite', 100, type=int)
-        usuario_id = request.args.get('usuario_id', type=int)
-
-        conexion = get_connection()
-        with conexion.cursor() as cursor:
-            query = """
-                SELECT a.id, a.dispositivo, a.accion, a.fecha_hora,
-                    u.username as usuario
-                FROM acciones a
-                JOIN usuarios u ON a.usuario_id = u.id
-            """
-
-            if usuario_id:
-                query += " WHERE a.usuario_id = %s ORDER BY a.fecha_hora DESC LIMIT %s"
-                cursor.execute(query, (usuario_id, limite))
+            # Determinar si hay cambio de estado o no
+            if accion == 'ENCENDER' and estado_actual == 'ENCENDIDO':
+                resultado = 'SIN_CAMBIO'
+                comentario = 'El dispositivo ya está ENCENDIDO'
+            elif accion == 'APAGAR' and estado_actual == 'APAGADO':
+                resultado = 'SIN_CAMBIO'
+                comentario = 'El dispositivo ya está APAGADO'
             else:
-                query += " ORDER BY a.fecha_hora DESC LIMIT %s"
-                cursor.execute(query, (limite,))
+                # Actualizar estado en tabla dispositivos
+                nuevo_estado = 'ENCENDIDO' if accion == 'ENCENDER' else 'APAGADO'
+                cursor.execute(
+                    "UPDATE dispositivos SET estado_actual = %s WHERE id = %s",
+                    (nuevo_estado, dispositivo_id)
+                )
+                resultado = 'OK'
+                comentario = f'Dispositivo {nuevo_estado} correctamente'
 
-            acciones = cursor.fetchall()
+            # Registrar acción
+            cursor.execute("""
+                INSERT INTO acciones (usuario_id, dispositivo_id, accion, resultado, comentario)
+                VALUES (%s, %s, %s, %s, %s)
+            """, (usuario_id, dispositivo_id, accion, resultado, comentario))
 
-        conexion.close()
-
-        # Convertir fecha a zona horaria de Colombia
-        tz_colombia = pytz.timezone("America/Bogota")
-        for accion in acciones:
-            if isinstance(accion['fecha_hora'], datetime):
-                fecha_utc = accion['fecha_hora'].replace(tzinfo=pytz.UTC)
-                fecha_local = fecha_utc.astimezone(tz_colombia)
-                accion['fecha_hora'] = fecha_local.strftime(
-                    "%Y-%m-%d %H:%M:%S")
+            connection.commit()
 
         return jsonify({
-            "success": True,
-            "total": len(acciones),
-            "acciones": acciones
-        }), 200
+            "message": "Acción registrada correctamente",
+            "resultado": resultado,
+            "comentario": comentario
+        }), 201
 
     except Exception as e:
-        print(f"Error: {e}")
+        print("❌ Error al registrar acción:", e)
         return jsonify({"error": str(e)}), 500
+
+    finally:
+        connection.close()
+
+
+# ------------------------------------------------------------
+# 📍 Consultar historial de acciones
+# ------------------------------------------------------------
+@acciones_bp.route('/historial', methods=['GET'])
+def listar_acciones():
+    """Devuelve el historial de acciones (opcionalmente filtrado por usuario o dispositivo)"""
+    usuario_id = request.args.get('usuario_id')
+    dispositivo_id = request.args.get('dispositivo_id')
+
+    query = """
+        SELECT a.id, u.username, d.nombre AS dispositivo, a.accion, a.resultado, a.comentario, a.fecha_hora
+        FROM acciones a
+        JOIN usuarios u ON a.usuario_id = u.id
+        JOIN dispositivos d ON a.dispositivo_id = d.id
+        WHERE 1=1
+    """
+    params = []
+
+    if usuario_id:
+        query += " AND a.usuario_id = %s"
+        params.append(usuario_id)
+
+    if dispositivo_id:
+        query += " AND a.dispositivo_id = %s"
+        params.append(dispositivo_id)
+
+    query += " ORDER BY a.fecha_hora DESC LIMIT 50"
+
+    try:
+        connection = get_connection()
+        with connection.cursor() as cursor:
+            cursor.execute(query, params)
+            acciones = cursor.fetchall()
+
+        return jsonify(acciones), 200
+
+    except Exception as e:
+        print("❌ Error al obtener historial:", e)
+        return jsonify({"error": str(e)}), 500
+
+    finally:
+        connection.close()
