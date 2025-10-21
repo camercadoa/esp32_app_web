@@ -12,7 +12,7 @@ reportes_bp = Blueprint('reportes', __name__, url_prefix='/api/reportes')
 
 
 # ------------------------------------------------------------
-# 🟦 Función para obtener acciones filtradas
+# Función para obtener acciones filtradas
 # ------------------------------------------------------------
 def obtener_acciones_filtradas(fecha_inicio, fecha_fin, dispositivo_id=None):
     conexion = get_connection()
@@ -34,7 +34,6 @@ def obtener_acciones_filtradas(fecha_inicio, fecha_fin, dispositivo_id=None):
         acciones = cursor.fetchall()
     conexion.close()
 
-    # Convertir fecha a hora local Colombia
     tz_col = pytz.timezone("America/Bogota")
     for a in acciones:
         if isinstance(a["fecha_hora"], datetime):
@@ -44,7 +43,7 @@ def obtener_acciones_filtradas(fecha_inicio, fecha_fin, dispositivo_id=None):
 
 
 # ------------------------------------------------------------
-# 📊 Reporte en formato Excel
+# Reporte en formato Excel
 # ------------------------------------------------------------
 @reportes_bp.route('/excel', methods=['GET'])
 def generar_excel():
@@ -58,25 +57,20 @@ def generar_excel():
 
         acciones = obtener_acciones_filtradas(fecha_inicio, fecha_fin, dispositivo_id)
 
-        # Crear archivo Excel
         wb = openpyxl.Workbook()
         ws = wb.active
         ws.title = "Reporte de Acciones"
 
-        # Encabezados
         headers = ["ID", "Usuario", "Dispositivo", "Acción", "Resultado", "Comentario", "Fecha y hora"]
         ws.append(headers)
 
-        # Datos
         for a in acciones:
             ws.append([a["id"], a["username"], a["dispositivo"], a["accion"], a["resultado"], a["comentario"], a["fecha_hora"]])
 
-        # Estilo básico
         for cell in ws[1]:
             cell.font = cell.font.copy(bold=True)
             cell.fill = openpyxl.styles.PatternFill(start_color="ADD8E6", end_color="ADD8E6", fill_type="solid")
 
-        # Guardar en memoria
         output = io.BytesIO()
         wb.save(output)
         output.seek(0)
@@ -85,12 +79,12 @@ def generar_excel():
         return send_file(output, as_attachment=True, download_name=nombre_archivo, mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
 
     except Exception as e:
-        print("❌ Error en /api/reportes/excel:", e)
+        print("Error en /api/reportes/excel:", e)
         return jsonify({"error": str(e)}), 500
 
 
 # ------------------------------------------------------------
-# 📄 Reporte en formato PDF
+# Reporte en formato PDF
 # ------------------------------------------------------------
 @reportes_bp.route('/pdf', methods=['GET'])
 def generar_pdf():
@@ -109,12 +103,10 @@ def generar_pdf():
         elements = []
         styles = getSampleStyleSheet()
 
-        # Título
         titulo = Paragraph(f"<b>Reporte de Acciones</b><br/>Desde {fecha_inicio} hasta {fecha_fin}", styles['Title'])
         elements.append(titulo)
         elements.append(Spacer(1, 12))
 
-        # Tabla
         data = [["ID", "Usuario", "Dispositivo", "Acción", "Resultado", "Comentario", "Fecha y hora"]]
         for a in acciones:
             data.append([
@@ -139,5 +131,5 @@ def generar_pdf():
         return send_file(buffer, as_attachment=True, download_name=nombre_archivo, mimetype='application/pdf')
 
     except Exception as e:
-        print("❌ Error en /api/reportes/pdf:", e)
+        print("Error en /api/reportes/pdf:", e)
         return jsonify({"error": str(e)}), 500

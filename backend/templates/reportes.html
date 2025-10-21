@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+{% block title %}Reportes - Monitor de Control{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="text-center mb-4">
+        <h3 class="fw-bold text-primary">
+            <i class="bi bi-file-earmark-bar-graph me-2"></i>Generar Reportes
+        </h3>
+        <p class="text-muted mb-0">Filtra los registros por sensor y rango de fechas, y descarga tu reporte en PDF o Excel.</p>
+    </div>
+
+    <!-- Card principal -->
+    <div class="card shadow-sm border-0 rounded-4 p-4">
+        <form id="formReportes" class="row g-3 align-items-end">
+            <!-- Sensor -->
+            <div class="col-md-4">
+                <label for="dispositivo" class="form-label fw-semibold">Sensor / Dispositivo</label>
+                <select id="dispositivo" class="form-select">
+                    <option value="">Todos</option>
+                </select>
+            </div>
+
+            <!-- Fecha inicio -->
+            <div class="col-md-3">
+                <label for="fechaInicio" class="form-label fw-semibold">Fecha inicio</label>
+                <input type="date" id="fechaInicio" class="form-control" required>
+            </div>
+
+            <!-- Fecha fin -->
+            <div class="col-md-3">
+                <label for="fechaFin" class="form-label fw-semibold">Fecha fin</label>
+                <input type="date" id="fechaFin" class="form-control" required>
+            </div>
+
+            <!-- Botones -->
+            <div class="col-md-2 text-end">
+                <button type="button" id="btnPdf" class="btn btn-danger w-100 mb-2">
+                    <i class="bi bi-filetype-pdf me-2"></i>PDF
+                </button>
+                <button type="button" id="btnExcel" class="btn btn-success w-100">
+                    <i class="bi bi-file-earmark-excel me-2"></i>Excel
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Mensaje -->
+    <div id="mensaje" class="text-center text-muted mt-4"></div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', async () => {
+    const selDispositivo = document.getElementById('dispositivo');
+    const btnPdf = document.getElementById('btnPdf');
+    const btnExcel = document.getElementById('btnExcel');
+    const btnVistaPrevia = document.getElementById('btnVistaPrevia');
+    const mensaje = document.getElementById('mensaje');
+    const vistaPrevia = document.getElementById('vistaPrevia');
+    const tablaRegistros = document.getElementById('tablaRegistros');
+
+    // Mostrar mensaje temporal
+    function mostrarMensaje(texto, tipo = "info", duracion = 3000) {
+        mensaje.innerHTML = `<div class="alert alert-${tipo} py-2">${texto}</div>`;
+        setTimeout(() => mensaje.innerHTML = "", duracion);
+    }
+
+    // Cargar lista de dispositivos
+    try {
+        const res = await fetch('/api/dispositivos');
+        const data = await res.json();
+
+        if (data.success && Array.isArray(data.dispositivos)) {
+            data.dispositivos
+                .sort((a, b) => a.nombre.localeCompare(b.nombre))
+                .forEach(d => {
+                    const opt = document.createElement('option');
+                    opt.value = d.id;
+                    opt.textContent = d.nombre;
+                    selDispositivo.appendChild(opt);
+                });
+        } else {
+            console.warn('No se encontraron dispositivos en la respuesta del servidor.');
+        }
+    } catch (err) {
+        console.error('Error al cargar dispositivos:', err);
+    }
+
+    // Función para generar reporte
+    function generarReporte(tipo) {
+        const inicio = document.getElementById('fechaInicio').value;
+        const fin = document.getElementById('fechaFin').value;
+        const dispositivo_id = selDispositivo.value;
+
+        if (!inicio || !fin) {
+            mostrarMensaje('Debe seleccionar las fechas de inicio y fin.', 'warning');
+            return;
+        }
+
+        const params = new URLSearchParams({ inicio, fin });
+        if (dispositivo_id) params.append('dispositivo_id', dispositivo_id);
+
+        const url = `/api/reportes/${tipo}?${params.toString()}`;
+        window.open(url, '_blank');
+        mostrarMensaje(`Generando reporte ${tipo.toUpperCase()}...`, 'info', 2500);
+    }
+
+    btnPdf.addEventListener('click', () => generarReporte('pdf'));
+    btnExcel.addEventListener('click', () => generarReporte('excel'));
+});
+</script>
+{% endblock %}

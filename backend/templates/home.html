@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+{% block title %}Inicio | ESP32 - Motor DC y LEDs{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-5">
+    <!-- Encabezado -->
+    <div class="text-center mb-5">
+        <p class="text-muted fs-5">
+            Sistema desarrollado con <strong>ESP32</strong> y una interfaz web para <strong>monitorear, controlar y analizar</strong> las acciones de un motor DC y un conjunto de LEDs.
+        </p>
+    </div>
+
+    <!-- Información general -->
+    <div class="row justify-content-center mb-5">
+        <div class="col-lg-10">
+            <div class="card border-0 shadow-sm rounded-4">
+                <div class="card-body p-4">
+                    <h5 class="fw-semibold mb-3 text-primary">
+                        <i class="bi bi-info-circle-fill me-2"></i>Acerca del Proyecto
+                    </h5>
+                    <p class="mb-2">
+                        Este proyecto integra un <strong>microcontrolador ESP32</strong> con una aplicación web que permite:
+                    </p>
+                    <ul class="mb-3">
+                        <li>Encender, apagar y controlar la dirección de un <strong>motor DC</strong>.</li>
+                        <li>Controlar y monitorear un conjunto de <strong>LEDs</strong>.</li>
+                        <li>Registrar automáticamente las acciones ejecutadas por el usuario.</li>
+                        <li>Visualizar estadísticas y generar reportes de las acciones.</li>
+                    </ul>
+                    <p class="mb-0">
+                        Todo esto con una interfaz moderna, adaptable y conectada mediante APIs REST.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Secciones principales -->
+    <div class="row text-center g-4">
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm rounded-4 h-100 hover-card">
+                <div class="card-body py-4">
+                    <i class="bi bi-sliders2 text-primary display-5 mb-3"></i>
+                    <h5 class="fw-semibold mb-2">Módulo de Control</h5>
+                    <p class="text-muted">
+                        Permite encender o apagar el motor DC, cambiar su dirección de giro y controlar los LEDs desde el navegador.
+                    </p>
+                    <a href="{{ url_for('app.control') }}" class="btn btn-outline-primary btn-sm mt-2">Ir al Control</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm rounded-4 h-100 hover-card">
+                <div class="card-body py-4">
+                    <i class="bi bi-bar-chart-line text-success display-5 mb-3"></i>
+                    <h5 class="fw-semibold mb-2">Dashboard</h5>
+                    <p class="text-muted">
+                        Visualiza estadísticas en tiempo real sobre las acciones registradas: encendidos, apagados y uso por dispositivo.
+                    </p>
+                    <a href="{{ url_for('app.dashboard') }}" class="btn btn-outline-success btn-sm mt-2">Ver Dashboard</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm rounded-4 h-100 hover-card">
+                <div class="card-body py-4">
+                    <i class="bi bi-file-earmark-bar-graph text-warning display-5 mb-3"></i>
+                    <h5 class="fw-semibold mb-2">Reportes</h5>
+                    <p class="text-muted">
+                        Genera informes detallados sobre las acciones del sistema y exporta los resultados para análisis posteriores.
+                    </p>
+                    <a href="{{ url_for('app.reportes') }}" class="btn btn-outline-warning btn-sm mt-2">Ver Reportes</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

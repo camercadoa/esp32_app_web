@@ -5,7 +5,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>
-    {% block title %}Monitor de Control - Motor DC y LEDs{% endblock %}
+    {% block title %}ESP32 - Motor DC y LEDs{% endblock %}
   </title>
 
   <!-- Bootstrap -->
@@ -20,12 +20,13 @@
   {% block extra_css %}{% endblock %}
 </head>
 
-<body class="bg-body text-body">
+<body class="bg-light-subtle text-body d-flex flex-column min-vh-100">
+
   <!-- Navbar fija -->
   <nav class="navbar navbar-expand-lg navbar-dark bg-dark shadow-sm fixed-top" id="mainNavbar">
     <div class="container">
-      <a class="navbar-brand fw-semibold" href="{{ url_for('auth.login') }}">
-        <i class="bi bi-speedometer2 me-2"></i>Monitor de Control
+      <a class="navbar-brand fw-semibold" href="{{ url_for('app.home') }}">
+        <i class="bi bi-speedometer2 me-2"></i>ESP32 - Motor DC y LEDs
       </a>
 
       <!-- Botón responsive -->
@@ -34,53 +35,63 @@
       </button>
 
       <div class="collapse navbar-collapse" id="navbarNav">
-        <ul class="navbar-nav ms-auto">
+        <ul class="navbar-nav ms-auto hstack gap-3">
           <li class="nav-item">
-            <a class="nav-link {% if request.path == '/dashboard' %}active{% endif %}"
-              href="{{ url_for('dashboard.dashboard') }}">
-              <i class="bi bi-bar-chart-line me-1"></i>Dashboard
+            <a class="nav-link {% if request.path == '/' %}active text-warning{% endif %}" href="{{ url_for('app.home') }}">
+              <i class="bi bi-house me-2"></i>Inicio
             </a>
           </li>
           <li class="nav-item">
-            <a class="nav-link {% if request.path == '/control' %}active{% endif %}" href="{# url_for('control') #}">
-              <i class="bi bi-sliders2 me-1"></i>Control
+            <a class="nav-link {% if request.path == '/control' %}active text-warning{% endif %}" href="{{ url_for('app.control') }}">
+              <i class="bi bi-sliders2 me-2"></i>Control
             </a>
           </li>
           <li class="nav-item">
-            <a class="nav-link {% if request.path == '/reportes' %}active{% endif %}" href="{# url_for('reportes') #}">
-              <i class="bi bi-file-earmark-bar-graph me-1"></i>Reportes
+            <a class="nav-link {% if request.path == '/dashboard' %}active text-warning{% endif %}" href="{{ url_for('app.dashboard') }}">
+              <i class="bi bi-bar-chart-line me-2"></i>Dashboard
             </a>
           </li>
           <li class="nav-item">
-            <a class="nav-link {% if request.path == '/acerca' %}active{% endif %}" href="{# url_for('acerca') #}">
-              <i class="bi bi-info-circle me-1"></i>Acerca de
+            <a class="nav-link {% if request.path == '/reportes' %}active text-warning{% endif %}" href="{{ url_for('app.reportes') }}">
+              <i class="bi bi-file-earmark-bar-graph me-2"></i>Reportes
             </a>
           </li>
           <li class="nav-item">
-            {% if not 'login' in request.path and not 'registro' in request.path %}
-              <div class="d-flex align-items-center gap-3">
-                <span class="text-light small" id="usuarioActivo"></span>
-                <button class="btn btn-sm btn-outline-light" onclick="cerrarSesion()">
-                  <i class="bi bi-box-arrow-right"></i> Salir
-                </button>
-              </div>
-            {% endif %}
+            <a class="nav-link {% if request.path == '/acerca_de' %}active text-warning{% endif %}" href="{{ url_for('app.acerca_de') }}">
+              <i class="bi bi-info-circle me-2"></i>Acerca de
+            </a>
           </li>
+          {% if not 'login' in request.path and not 'registro' in request.path %}
+            <div class="vr text-light"></div>
+
+            <!-- Mostrar nombre del usuario logueado -->
+            <li class="nav-item d-flex align-items-center text-light small">
+              <span id="usuarioLogueado" class="fw-semibold"></span>
+            </li>
+
+            <li class="nav-item">
+              <a class="nav-link text-bg-danger rounded" onclick="cerrarSesion()" style="cursor: pointer;">
+                <i class="bi bi-arrow-left me-2"></i>Salir
+              </a>
+            </li>
+          {% endif %}
+
         </ul>
       </div>
     </div>
   </nav>
 
-  <!-- 🧩 Contenido principal -->
-  <main class="container" style="padding-top: 80px">
+  <!-- Contenido principal -->
+  <main class="flex-grow-1 container" style="padding-top: 70px; padding-bottom: 80px;">
     {% block content %}
-    <!-- Cada página colocará su contenido aquí -->
     {% endblock %}
   </main>
 
-  <!-- 🔻 Footer -->
-  <footer class="text-center py-3 mt-5 border-top small text-muted">
-    Proyecto ESP32 - Motor DC y LEDs
+  <!-- Footer fijo -->
+  <footer class="footer bg-light text-dark text-center py-3 fixed-bottom shadow-sm">
+    <div class="container small">
+      <strong>ESP32 - Motor DC y LEDs</strong> ©
+    </div>
   </footer>
 
   <!-- Scripts base -->
@@ -88,15 +99,16 @@
   <script src="{{ url_for('static', filename='js/main.js') }}"></script>
   {% block extra_js %}
   <script>
+    // Mostrar nombre del usuario logueado desde localStorage
     document.addEventListener("DOMContentLoaded", () => {
-      const nombre = localStorage.getItem("usuario_nombre");
-      if (nombre) {
-        const label = document.getElementById("usuarioActivo");
-        if (label) label.textContent = `👋 Hola, ${nombre}`;
+      const nombreUsuario = localStorage.getItem("usuario_nombre");
+      const elementoUsuario = document.getElementById("usuarioLogueado");
+
+      if (elementoUsuario && nombreUsuario) {
+        elementoUsuario.textContent = nombreUsuario;
       }
     });
   </script>
   {% endblock %}
 </body>
-
 </html>

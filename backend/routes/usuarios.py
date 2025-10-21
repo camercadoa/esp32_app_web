@@ -12,7 +12,7 @@ SECRET_KEY = "clave_secreta_segura_esp32_api_2025"
 
 
 # ------------------------------------------------------------
-# 🧩 Registrar nuevo usuario
+# Registrar nuevo usuario
 # ------------------------------------------------------------
 @usuarios_bp.route('/registro', methods=['POST'])
 def registrar_usuario():
@@ -54,7 +54,7 @@ def registrar_usuario():
 
 
 # ------------------------------------------------------------
-# 🔐 Inicio de sesión
+# Inicio de sesión
 # ------------------------------------------------------------
 @usuarios_bp.route('/login', methods=['POST'])
 def login_usuario():

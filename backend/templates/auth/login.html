@@ -79,8 +79,8 @@ content %}
       localStorage.setItem("usuario_nombre", data.usuario.nombre);
       localStorage.setItem("usuario_username", data.usuario.username);
 
-      // Redirigir al dashboard
-      window.location.href = "{{ url_for('dashboard.dashboard') }}";
+      // Redirigir al home
+      window.location.href = "{{ url_for('app.home') }}";
     } catch (error) {
       console.error("Error:", error);
       alerta.textContent = "No se pudo conectar con el servidor.";

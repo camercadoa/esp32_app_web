@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% block title %}Acerca de - Monitor de Control{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="text-center mb-5">
+        <h2 class="fw-bold text-primary">
+            <i class="bi bi-info-circle-fill me-2"></i>Acerca del Proyecto
+        </h2>
+        <p class="text-muted mt-3 mx-auto" style="max-width: 700px;">
+            Este proyecto fue desarrollado como parte del trabajo académico de la carrera de <strong>Ingeniería de Sistemas y Computación</strong> en la <strong>Corporación Universitaria Latinoamericana - CUL</strong>.
+            <br>
+            Su propósito es integrar un <strong>ESP32</strong> con una aplicación web para el control de un <strong>motor DC y LEDs</strong>, mostrando los registros y estadísticas de funcionamiento.
+        </p>
+    </div>
+
+    <div class="row justify-content-center g-4">
+        <!-- Camilo Mercado -->
+        <div class="col-12 col-md-4">
+            <div class="card shadow-sm border-0 rounded-4 text-center h-100">
+                <div class="card-body">
+                    <i class="bi bi-person-circle fs-1 text-secondary mb-3"></i>
+                    <h5 class="fw-bold mb-1">Camilo Mercado</h5>
+                    <div class="d-flex justify-content-center gap-3 my-3">
+                        <a href="https://github.com/" target="_blank" class="text-dark"><i class="bi bi-github fs-4"></i></a>
+                        <a href="https://linkedin.com/" target="_blank" class="text-primary"><i class="bi bi-linkedin fs-4"></i></a>
+                        <a href="mailto:correo@gmail.com" class="text-danger"><i class="bi bi-envelope-fill fs-4"></i></a>
+                    </div>
+                    <p class="small text-primary fw-semibold mb-0">10° semestre</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Ramón Montesino -->
+        <div class="col-12 col-md-4">
+            <div class="card shadow-sm border-0 rounded-4 text-center h-100">
+                <div class="card-body">
+                    <i class="bi bi-person-circle fs-1 text-secondary mb-3"></i>
+                    <h5 class="fw-bold mb-1">Ramón Montesino</h5>
+                    <div class="d-flex justify-content-center gap-3 my-3">
+                        <a href="https://github.com/" target="_blank" class="text-dark"><i class="bi bi-github fs-4"></i></a>
+                        <a href="https://linkedin.com/" target="_blank" class="text-primary"><i class="bi bi-linkedin fs-4"></i></a>
+                        <a href="mailto:correo@gmail.com" class="text-danger"><i class="bi bi-envelope-fill fs-4"></i></a>
+                    </div>
+                    <p class="small text-primary fw-semibold mb-0">7° semestre</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Cristian Pérez -->
+        <div class="col-12 col-md-4">
+            <div class="card shadow-sm border-0 rounded-4 text-center h-100">
+                <div class="card-body">
+                    <i class="bi bi-person-circle fs-1 text-secondary mb-3"></i>
+                    <h5 class="fw-bold mb-1">Cristian Pérez</h5>
+                    <div class="d-flex justify-content-center gap-3 my-3">
+                        <a href="https://github.com/" target="_blank" class="text-dark"><i class="bi bi-github fs-4"></i></a>
+                        <a href="https://linkedin.com/" target="_blank" class="text-primary"><i class="bi bi-linkedin fs-4"></i></a>
+                        <a href="mailto:correo@gmail.com" class="text-danger"><i class="bi bi-envelope-fill fs-4"></i></a>
+                    </div>
+                    <p class="small text-primary fw-semibold mb-0">7° semestre</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,25 +1,8 @@
-/* 🔹 Igualar tamaño y estilo de las tarjetas del dashboard */
-.card-grafico {
-    height: 350px;                /* Altura uniforme */
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
+.hover-card {
+    transition: all 0.25s ease-in-out;
 }
 
-.card-grafico .card-body {
-    flex-grow: 1;
-    display: flex;
-    flex-direction: column;
-}
-
-.card-grafico canvas {
-    flex-grow: 1;
-    max-height: 250px;            /* Controla la altura del gráfico dentro del card */
-}
-
-/* 🔹 Alinear los gráficos en una cuadrícula balanceada */
-.row-graficos {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
-    gap: 1.5rem;
+.hover-card:hover {
+    transform: translateY(-6px);
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
 }

@@ -67,7 +67,7 @@ document.getElementById("registroForm").addEventListener("submit", async (e) => 
     }
 
     // Registro exitoso → redirigir al login
-    window.location.href = "/login";
+    window.location.href = "{{ url_for('auth.login') }}";
 
   } catch (error) {
     console.error("Error:", error);

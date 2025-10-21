@@ -1,6 +1,4 @@
-// =======================
-// 🔐 Middleware de sesión
-// =======================
+// Middleware de sesión
 document.addEventListener("DOMContentLoaded", () => {
     const token = localStorage.getItem("jwt_token");
     const currentPath = window.location.pathname;
@@ -13,9 +11,9 @@ document.addEventListener("DOMContentLoaded", () => {
         return;
     }
 
-    // Si HAY token y estamos en login o registro → ir al dashboard
+    // Si HAY token y estamos en login o registro → ir al home
     if (token && isAuthPage) {
-        window.location.href = "/dashboard";
+        window.location.href = "/";
         return;
     }
 
@@ -25,9 +23,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 });
 
-// =======================
-// 🧩 Función para validar token con la API
-// =======================
+// Función para validar token con la API
 async function verificarToken(token) {
     try {
         const response = await fetch("/api/health", {
@@ -43,9 +39,8 @@ async function verificarToken(token) {
     }
 }
 
-// =======================
-// 🚪 Cerrar sesión
-// =======================
+
+// Cerrar sesión
 function cerrarSesion() {
     localStorage.removeItem("jwt_token");
     localStorage.removeItem("usuario_nombre");
