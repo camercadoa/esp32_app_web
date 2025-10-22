@@ -6,7 +6,7 @@ import pytz
 estadisticas_bp = Blueprint('estadisticas', __name__, url_prefix='/api/estadisticas')
 
 # ------------------------------------------------------------
-# 📊 Indicadores generales (cards del dashboard)
+# Indicadores generales (cards del dashboard)
 # ------------------------------------------------------------
 @estadisticas_bp.route('/indicadores', methods=['GET'])
 def indicadores_generales():
@@ -87,7 +87,7 @@ def indicadores_generales():
 
 
 # ------------------------------------------------------------
-# 📈 1. Historial diario de acciones
+# 1. Historial diario de acciones
 # ------------------------------------------------------------
 @estadisticas_bp.route('/acciones-diarias', methods=['GET'])
 def acciones_diarias():
@@ -116,7 +116,7 @@ def acciones_diarias():
 
 
 # ------------------------------------------------------------
-# 🟦 2. Distribución de acciones por dispositivo
+# 2. Distribución de acciones por dispositivo
 # ------------------------------------------------------------
 @estadisticas_bp.route('/acciones-por-dispositivo', methods=['GET'])
 def acciones_por_dispositivo():
@@ -145,7 +145,7 @@ def acciones_por_dispositivo():
 
 
 # ------------------------------------------------------------
-# 🟩 3. Proporción de encender vs apagar
+# 3. Proporción de encender vs apagar
 # ------------------------------------------------------------
 @estadisticas_bp.route('/acciones-por-tipo', methods=['GET'])
 def acciones_por_tipo():
@@ -173,7 +173,7 @@ def acciones_por_tipo():
 
 
 # ------------------------------------------------------------
-# 👤 4. Acciones por usuario (ranking)
+# 4. Acciones por usuario (ranking)
 # ------------------------------------------------------------
 @estadisticas_bp.route('/acciones-por-usuario', methods=['GET'])
 def acciones_por_usuario():
@@ -203,7 +203,7 @@ def acciones_por_usuario():
 
 
 # ------------------------------------------------------------
-# 🕒 5. Última acción registrada
+# 5. Última acción registrada
 # ------------------------------------------------------------
 @estadisticas_bp.route('/ultima-accion', methods=['GET'])
 def ultima_accion():
@@ -211,8 +211,7 @@ def ultima_accion():
         conexion = get_connection()
         with conexion.cursor() as cursor:
             cursor.execute("""
-                SELECT a.accion, d.nombre AS nombre_dispositivo, 
-                       u.nombre AS usuario, a.fecha_hora
+                SELECT a.accion, d.nombre AS nombre_dispositivo, u.nombre AS usuario, a.fecha_hora
                 FROM acciones a
                 JOIN dispositivos d ON a.dispositivo_id = d.id
                 JOIN usuarios u ON a.usuario_id = u.id
@@ -231,7 +230,7 @@ def ultima_accion():
         return jsonify({"success": True, "ultima_accion": ultima}), 200
 
     except Exception as e:
-        print("❌ Error en ultima_accion:", e)
+        print("Error en ultima_accion:", e)
         return jsonify({"error": str(e)}), 500
 
     finally:

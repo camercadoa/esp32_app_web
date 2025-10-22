@@ -5,7 +5,7 @@ estado_bp = Blueprint('estado', __name__, url_prefix='/api/estado')
 
 
 # ------------------------------------------------------------
-# 📍 Obtener el estado actual de todos los dispositivos
+# Obtener el estado actual de todos los dispositivos
 # ------------------------------------------------------------
 @estado_bp.route('/', methods=['GET'])
 def obtener_estado_general():
@@ -40,7 +40,7 @@ def obtener_estado_general():
         }), 200
 
     except Exception as e:
-        print("❌ Error al obtener estado general:", e)
+        print("Error al obtener estado general:", e)
         return jsonify({"error": str(e)}), 500
 
     finally:
@@ -48,7 +48,7 @@ def obtener_estado_general():
 
 
 # ------------------------------------------------------------
-# 📍 Obtener el estado de un dispositivo específico
+# Obtener el estado de un dispositivo específico
 # ------------------------------------------------------------
 @estado_bp.route('/<int:dispositivo_id>', methods=['GET'])
 def obtener_estado_dispositivo(dispositivo_id):
@@ -74,7 +74,7 @@ def obtener_estado_dispositivo(dispositivo_id):
         }), 200
 
     except Exception as e:
-        print("❌ Error al obtener estado del dispositivo:", e)
+        print("Error al obtener estado del dispositivo:", e)
         return jsonify({"error": str(e)}), 500
 
     finally:

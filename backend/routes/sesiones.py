@@ -7,7 +7,7 @@ sesiones_bp = Blueprint('sesiones', __name__, url_prefix='/api/sesiones')
 
 
 # ------------------------------------------------------------
-# 🟩 Registrar inicio de sesión
+# Registrar inicio de sesión
 # ------------------------------------------------------------
 @sesiones_bp.route('/iniciar', methods=['POST'])
 def iniciar_sesion():
@@ -34,7 +34,7 @@ def iniciar_sesion():
         return jsonify({"success": True, "message": "Sesión iniciada correctamente"}), 201
 
     except Exception as e:
-        print("❌ Error en iniciar_sesion:", e)
+        print("Error en iniciar_sesion:", e)
         return jsonify({"error": str(e)}), 500
 
     finally:
@@ -42,7 +42,7 @@ def iniciar_sesion():
 
 
 # ------------------------------------------------------------
-# 🟥 Registrar cierre de sesión
+# Registrar cierre de sesión
 # ------------------------------------------------------------
 @sesiones_bp.route('/cerrar', methods=['POST'])
 def cerrar_sesion():
@@ -71,7 +71,7 @@ def cerrar_sesion():
         return jsonify({"success": True, "message": "Sesión cerrada correctamente"}), 200
 
     except Exception as e:
-        print("❌ Error en cerrar_sesion:", e)
+        print("Error en cerrar_sesion:", e)
         return jsonify({"error": str(e)}), 500
 
     finally:
@@ -79,7 +79,7 @@ def cerrar_sesion():
 
 
 # ------------------------------------------------------------
-# 🟦 Consultar sesiones activas
+# Consultar sesiones activas
 # ------------------------------------------------------------
 @sesiones_bp.route('/activas', methods=['GET'])
 def sesiones_activas():
@@ -106,7 +106,7 @@ def sesiones_activas():
         return jsonify({"success": True, "sesiones_activas": sesiones}), 200
 
     except Exception as e:
-        print("❌ Error en sesiones_activas:", e)
+        print("Error en sesiones_activas:", e)
         return jsonify({"error": str(e)}), 500
 
     finally:
@@ -114,7 +114,7 @@ def sesiones_activas():
 
 
 # ------------------------------------------------------------
-# 📋 Consultar historial de sesiones
+# Consultar historial de sesiones
 # ------------------------------------------------------------
 @sesiones_bp.route('/historial', methods=['GET'])
 def historial_sesiones():
@@ -143,7 +143,7 @@ def historial_sesiones():
         return jsonify({"success": True, "historial": sesiones}), 200
 
     except Exception as e:
-        print("❌ Error en historial_sesiones:", e)
+        print("Error en historial_sesiones:", e)
         return jsonify({"error": str(e)}), 500
 
     finally:

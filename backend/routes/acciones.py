@@ -5,7 +5,7 @@ acciones_bp = Blueprint('acciones', __name__, url_prefix='/api/acciones')
 
 
 # ------------------------------------------------------------
-# 📍 Registrar acción (ENCENDER / APAGAR)
+# Registrar acción (ENCENDER / APAGAR)
 # ------------------------------------------------------------
 @acciones_bp.route('/registrar', methods=['POST'])
 def registrar_accion():
@@ -61,7 +61,7 @@ def registrar_accion():
         }), 201
 
     except Exception as e:
-        print("❌ Error al registrar acción:", e)
+        print("Error al registrar acción:", e)
         return jsonify({"error": str(e)}), 500
 
     finally:
@@ -69,7 +69,7 @@ def registrar_accion():
 
 
 # ------------------------------------------------------------
-# 📍 Consultar historial de acciones
+# Consultar historial de acciones
 # ------------------------------------------------------------
 @acciones_bp.route('/historial', methods=['GET'])
 def listar_acciones():
@@ -105,7 +105,7 @@ def listar_acciones():
         return jsonify(acciones), 200
 
     except Exception as e:
-        print("❌ Error al obtener historial:", e)
+        print("Error al obtener historial:", e)
         return jsonify({"error": str(e)}), 500
 
     finally:

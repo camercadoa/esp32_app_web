@@ -23,12 +23,12 @@ def home():
 
 @app_web.route("/control")
 def control():
-    return render_template("control/control.html")
+    return render_template("control.html")
 
 
 @app_web.route("/dashboard")
 def dashboard():
-    return render_template("dashboard/dashboard.html")
+    return render_template("dashboard.html")
 
 
 @app_web.route("/reportes")

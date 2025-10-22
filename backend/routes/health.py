@@ -21,7 +21,7 @@ def health_check():
 
     except Exception as e:
         db_status = "ERROR"
-        print("❌ Error al verificar base de datos:", e)
+        print("Error al verificar base de datos:", e)
 
     # Hora actual en zona Colombia
     tz_col = pytz.timezone("America/Bogota")

@@ -20,7 +20,7 @@ def get_connection():
         # print("✅ Conexión exitosa a la base de datos.")
         return connection
     except pymysql.MySQLError as e:
-        print(f"❌ Error al conectar con la base de datos: {e}")
+        print(f"Error al conectar con la base de datos: {e}")
         return None
 
 
@@ -83,7 +83,7 @@ def create_tables():
             print("✅ Tablas verificadas/creadas correctamente.")
 
     except pymysql.MySQLError as e:
-        print(f"❌ Error al crear las tablas: {e}")
+        print(f"Error al crear las tablas: {e}")
 
     finally:
         connection.close()

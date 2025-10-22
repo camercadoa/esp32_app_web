@@ -6,7 +6,7 @@ dispositivos_bp = Blueprint(
 
 
 # ------------------------------------------------------------
-# 📍 Obtener todos los dispositivos
+# Obtener todos los dispositivos
 # ------------------------------------------------------------
 @dispositivos_bp.route('/', methods=['GET'])
 def listar_dispositivos():
@@ -30,7 +30,7 @@ def listar_dispositivos():
         }), 200
 
     except Exception as e:
-        print("❌ Error al listar dispositivos:", e)
+        print("Error al listar dispositivos:", e)
         return jsonify({"error": str(e)}), 500
 
     finally:
@@ -38,7 +38,7 @@ def listar_dispositivos():
 
 
 # ------------------------------------------------------------
-# 📍 Obtener un dispositivo específico
+# Obtener un dispositivo específico
 # ------------------------------------------------------------
 @dispositivos_bp.route('/<int:dispositivo_id>', methods=['GET'])
 def obtener_dispositivo(dispositivo_id):
@@ -61,7 +61,7 @@ def obtener_dispositivo(dispositivo_id):
         return jsonify({"success": True, "dispositivo": dispositivo}), 200
 
     except Exception as e:
-        print("❌ Error al obtener dispositivo:", e)
+        print("Error al obtener dispositivo:", e)
         return jsonify({"error": str(e)}), 500
 
     finally:
@@ -69,7 +69,7 @@ def obtener_dispositivo(dispositivo_id):
 
 
 # ------------------------------------------------------------
-# 📍 Actualizar el estado manualmente
+# Actualizar el estado manualmente
 # ------------------------------------------------------------
 @dispositivos_bp.route('/<int:dispositivo_id>/estado', methods=['PUT'])
 def actualizar_estado(dispositivo_id):
@@ -105,7 +105,7 @@ def actualizar_estado(dispositivo_id):
         }), 200
 
     except Exception as e:
-        print("❌ Error al actualizar estado del dispositivo:", e)
+        print("Error al actualizar estado del dispositivo:", e)
         return jsonify({"error": str(e)}), 500
 
     finally:

@@ -1,0 +1,222 @@
+{% extends "base.html" %}
+{% block title %}Control | {% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+  <h2 class="fw-bold mb-4">
+    <i class="bi bi-sliders2 me-2"></i>Panel de Control
+  </h2>
+
+  <!-- Estados actuales -->
+  <div class="row g-3 mb-1">
+    <!-- Motor -->
+    <div class="col-md-4">
+      <div class="card text-center shadow-sm border-0 h-100">
+        <div class="card-body">
+          <i class="bi bi-gear-wide-connected fs-1 text-primary mb-2"></i>
+          <h5 class="fw-semibold">Motor DC</h5>
+          <p class="text-muted mb-2" id="estadoMotor">Cargando...</p>
+          <button id="btnMotor" class="btn btn-secondary btn-sm px-3" onclick="controlar(1)">
+            <i class="bi bi-hourglass-split me-1"></i> Cargando...
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- LED Verde -->
+    <div class="col-md-4">
+      <div class="card text-center shadow-sm border-0 h-100">
+        <div class="card-body">
+          <i class="bi bi-lightbulb-fill fs-1 text-success mb-2"></i>
+          <h5 class="fw-semibold">LED Verde</h5>
+          <p class="text-muted mb-2" id="estadoLedVerde">Cargando...</p>
+          <button id="btnLedVerde" class="btn btn-secondary btn-sm px-3" onclick="controlar(2)">
+            <i class="bi bi-hourglass-split me-1"></i> Cargando...
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- LED Rojo -->
+    <div class="col-md-4">
+      <div class="card text-center shadow-sm border-0 h-100">
+        <div class="card-body">
+          <i class="bi bi-lightbulb-fill fs-1 text-danger mb-2"></i>
+          <h5 class="fw-semibold">LED Rojo</h5>
+          <p class="text-muted mb-2" id="estadoLedRojo">Cargando...</p>
+          <button id="btnLedRojo" class="btn btn-secondary btn-sm px-3" onclick="controlar(3)">
+            <i class="bi bi-hourglass-split me-1"></i> Cargando...
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Historial de acciones -->
+  <div class="card shadow-sm border-0">
+    <div class="card-header bg-primary text-light d-flex justify-content-between align-items-center">
+      <span><i class="bi bi-clock-history me-2"></i>Historial de Acciones</span>
+      <button class="btn btn-light btn-sm" onclick="cargarHistorial()">
+        <i class="bi bi-arrow-clockwise me-1"></i>Actualizar
+      </button>
+    </div>
+    <div class="card-body p-0">
+      <div class="table-responsive tabla-scroll">
+        <table class="table table-striped align-middle mb-0">
+          <thead class="table-light">
+            <tr>
+              <th>ID</th>
+              <th>Usuario</th>
+              <th>Dispositivo</th>
+              <th>Acción</th>
+              <th>Resultado</th>
+              <th>Comentario</th>
+              <th>Fecha / Hora</th>
+            </tr>
+          </thead>
+          <tbody id="tablaHistorial">
+            <tr>
+              <td colspan="7" class="text-center text-muted">Cargando historial...</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Alerta -->
+<div id="alerta" class="alert position-fixed bottom-0 end-0 m-3 d-none shadow" style="z-index: 1050"></div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  const alerta = document.getElementById("alerta");
+
+  function mostrarAlerta(mensaje, tipo = "info") {
+    alerta.textContent = mensaje;
+    alerta.className = `alert alert-${tipo} position-fixed bottom-0 end-0 m-3 shadow`;
+    alerta.classList.remove("d-none");
+    setTimeout(() => alerta.classList.add("d-none"), 3000);
+  }
+
+  // Cargar estados y actualizar botones dinámicamente
+  async function cargarEstados() {
+    try {
+      const res = await fetch("/api/dispositivos/");
+      const data = await res.json();
+      if (!data.success) throw new Error("Respuesta inválida del servidor");
+
+      const motor = data.dispositivos.find((d) => d.id === 1);
+      const ledVerde = data.dispositivos.find((d) => d.id === 2);
+      const ledRojo = data.dispositivos.find((d) => d.id === 3);
+
+      actualizarUI(1, motor, "Motor", "btnMotor", "estadoMotor");
+      actualizarUI(2, ledVerde, "LED Verde", "btnLedVerde", "estadoLedVerde");
+      actualizarUI(3, ledRojo, "LED Rojo", "btnLedRojo", "estadoLedRojo");
+    } catch (err) {
+      console.error("Error cargando estados:", err);
+      mostrarAlerta("Error al obtener estados de los dispositivos.", "danger");
+    }
+  }
+
+  // Actualiza texto e ícono del botón según estado
+  function actualizarUI(id, dispositivo, nombre, btnId, estadoId) {
+    const estado = dispositivo?.estado_actual || "DESCONOCIDO";
+    const btn = document.getElementById(btnId);
+    const lbl = document.getElementById(estadoId);
+
+    lbl.textContent = estado;
+
+    if (estado === "ENCENDIDO") {
+      btn.className = "btn btn-danger btn-sm px-3";
+      btn.innerHTML = `<i class="bi bi-toggle-off me-1"></i> Apagar`;
+      btn.dataset.accion = "APAGAR";
+    } else if (estado === "APAGADO") {
+      btn.className = "btn btn-success btn-sm px-3";
+      btn.innerHTML = `<i class="bi bi-toggle-on me-1"></i> Encender`;
+      btn.dataset.accion = "ENCENDER";
+    } else {
+      btn.className = "btn btn-secondary btn-sm px-3";
+      btn.innerHTML = `<i class="bi bi-question-circle me-1"></i> Desconocido`;
+      btn.dataset.accion = "";
+    }
+  }
+
+  // Controlar dispositivo según su estado actual
+  async function controlar(dispositivo_id) {
+    const usuario_id = localStorage.getItem("usuario_id");
+    if (!usuario_id) {
+      mostrarAlerta("Debe iniciar sesión para realizar acciones.", "warning");
+      return;
+    }
+
+    const boton = document.querySelector(`[onclick="controlar(${dispositivo_id})"]`);
+    const accion = boton.dataset.accion;
+    if (!accion) return;
+
+    try {
+      const res = await fetch("/api/acciones/registrar", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          usuario_id: parseInt(usuario_id),
+          dispositivo_id,
+          accion,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (res.ok) {
+        mostrarAlerta(data.comentario || "Acción ejecutada correctamente", "success");
+        await cargarEstados();
+        await cargarHistorial();
+      } else {
+        mostrarAlerta(data.error || "Error al ejecutar acción", "danger");
+      }
+    } catch (err) {
+      console.error("Error al enviar acción:", err);
+      mostrarAlerta("Error de conexión con el servidor.", "danger");
+    }
+  }
+
+  // Cargar historial de acciones
+  async function cargarHistorial() {
+    try {
+      const res = await fetch("/api/acciones/historial");
+      const data = await res.json();
+      const tabla = document.getElementById("tablaHistorial");
+      tabla.innerHTML = "";
+
+      if (!Array.isArray(data) || data.length === 0) {
+        tabla.innerHTML = `<tr><td colspan="7" class="text-center text-muted">No hay acciones registradas.</td></tr>`;
+        return;
+      }
+
+      data.forEach((a) => {
+        const fila = `
+          <tr>
+            <td>${a.id}</td>
+            <td>${a.username}</td>
+            <td>${a.dispositivo}</td>
+            <td>${a.accion}</td>
+            <td>${a.resultado}</td>
+            <td>${a.comentario}</td>
+            <td>${a.fecha_hora}</td>
+          </tr>`;
+        tabla.insertAdjacentHTML("beforeend", fila);
+      });
+    } catch (err) {
+      console.error("Error cargando historial:", err);
+      mostrarAlerta("Error al cargar historial de acciones.", "danger");
+    }
+  }
+
+  document.addEventListener("DOMContentLoaded", () => {
+    cargarEstados();
+    cargarHistorial();
+  });
+</script>
+{% endblock %}

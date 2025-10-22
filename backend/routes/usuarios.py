@@ -46,7 +46,7 @@ def registrar_usuario():
         return jsonify({"success": True, "message": "Usuario registrado exitosamente"}), 201
 
     except Exception as e:
-        print("❌ Error en registro:", e)
+        print("Error en registro:", e)
         return jsonify({"error": str(e)}), 500
 
     finally:
@@ -100,7 +100,7 @@ def login_usuario():
         }), 200
 
     except Exception as e:
-        print("❌ Error en login:", e)
+        print("Error en login:", e)
         return jsonify({"error": str(e)}), 500
 
     finally:
@@ -108,7 +108,7 @@ def login_usuario():
 
 
 # ------------------------------------------------------------
-# 📍 Consultar usuario activo más reciente
+# Consultar usuario activo más reciente
 # (para mostrar en el LCD del ESP32)
 # ------------------------------------------------------------
 @usuarios_bp.route('/activo', methods=['GET'])
@@ -143,7 +143,7 @@ def obtener_usuario_activo():
         }), 200
 
     except Exception as e:
-        print("❌ Error al obtener usuario activo:", e)
+        print("Error al obtener usuario activo:", e)
         return jsonify({"error": str(e)}), 500
 
     finally:
