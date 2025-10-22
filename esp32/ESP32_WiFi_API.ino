@@ -3,6 +3,7 @@
 #include <LiquidCrystal_I2C.h>
 #include <WiFi.h>
 #include <HTTPClient.h>
+#include <Keypad.h>
 
 // ============================================================================
 // CONFIGURACIÓN WiFi - ¡CAMBIAR ESTOS VALORES!
@@ -11,7 +12,7 @@ const char *ssid = "TU_NOMBRE_WIFI";
 const char *password = "TU_PASSWORD_WIFI";
 
 // URL de tu API
-const char* apiURL = "http://TU_IP_LOCAL:5000/api/acciones";
+const char *apiURL = "http://TU_IP_LOCAL:5000/api/acciones";
 
 // ============================================================================
 // CONFIGURACIÓN LCD
@@ -57,6 +58,25 @@ unsigned long debounceDelay = 50;
 int usuarioId = 1;
 
 // ============================================================================
+// CONFIGURACIÓN TECLADO MATRICIAL
+// ============================================================================
+const byte FILAS = 4;
+const byte COLUMNAS = 4;
+char teclas[FILAS][COLUMNAS] = {
+    {'1', '2', '3', 'A'},
+    {'4', '5', '6', 'B'},
+    {'7', '8', '9', 'C'},
+    {'*', '0', '#', 'D'}};
+
+// Pines:
+//      F1=D19, F2=D18, F3=D5, F4=TX2(17)
+//      C1=RX2(16), C2=D4, C3=D2, C4=D15
+byte pinesFilas[FILAS] = {19, 18, 5, 17};
+byte pinesColumnas[COLUMNAS] = {16, 4, 2, 15};
+
+Keypad teclado = Keypad(makeKeymap(teclas), pinesFilas, pinesColumnas, FILAS, COLUMNAS);
+
+// ============================================================================
 // FUNCIONES WiFi
 // ============================================================================
 void conectarWiFi()
@@ -79,7 +99,7 @@ void conectarWiFi()
 
     if (WiFi.status() == WL_CONNECTED)
     {
-        Serial.println("\n✅ WiFi conectado");
+        Serial.println("\nWiFi conectado");
         Serial.print("IP: ");
         Serial.println(WiFi.localIP());
 
@@ -92,7 +112,7 @@ void conectarWiFi()
     }
     else
     {
-        Serial.println("\n⚠️ No se pudo conectar a WiFi");
+        Serial.println("\nNo se pudo conectar a WiFi");
         lcd.clear();
         lcd.setCursor(0, 0);
         lcd.print("WiFi Error");
@@ -106,7 +126,7 @@ void enviarAccionAPI(String dispositivo, String accion)
 {
     if (WiFi.status() != WL_CONNECTED)
     {
-        Serial.println("⚠️ Sin conexión WiFi - no se envió a API");
+        Serial.println("Sin conexión WiFi - no se envió a API");
         return;
     }
 
@@ -128,11 +148,11 @@ void enviarAccionAPI(String dispositivo, String accion)
     if (httpResponseCode > 0)
     {
         String response = http.getString();
-        Serial.println("✅ Respuesta API (" + String(httpResponseCode) + "): " + response);
+        Serial.println("Respuesta API (" + String(httpResponseCode) + "): " + response);
     }
     else
     {
-        Serial.print("❌ Error HTTP: ");
+        Serial.print("Error HTTP: ");
         Serial.println(httpResponseCode);
     }
 
@@ -196,6 +216,120 @@ void toggleLedRojo()
 }
 
 // ============================================================================
+// FUNCIONES DEL TECLADO
+// ============================================================================
+int menuActual = 0; // 0 = principal, 1=LED verde, 2=LED rojo, 3=motor, 4=estados
+bool enSubmenu = false;
+
+void mostrarMenuPrincipal()
+{
+    lcd.clear();
+    lcd.setCursor(0, 0);
+    lcd.print("1:Led V 2:Led R");
+    lcd.setCursor(0, 1);
+    lcd.print("3:Motor 4:BD");
+}
+
+void mostrarSubmenu(String nombre)
+{
+    lcd.clear();
+    lcd.setCursor(0, 0);
+    lcd.print(nombre);
+    lcd.setCursor(0, 1);
+    lcd.print("1:ON 2:OFF 3:EST");
+}
+
+void manejarTeclado()
+{
+    char tecla = teclado.getKey();
+    if (tecla)
+    {
+        Serial.print("Tecla presionada: ");
+        Serial.println(tecla);
+
+        if (!enSubmenu)
+        {
+            if (tecla >= '1' && tecla <= '4')
+            {
+                menuActual = tecla - '0';
+                enSubmenu = true;
+
+                if (menuActual == 1)
+                    mostrarSubmenu("LED Verde");
+                else if (menuActual == 2)
+                    mostrarSubmenu("LED Rojo");
+                else if (menuActual == 3)
+                    mostrarSubmenu("Motor");
+                else if (menuActual == 4)
+                {
+                    lcd.clear();
+                    lcd.print("Consultando BD...");
+                    // Aquí en Fase 3 haremos la consulta a la API
+                }
+            }
+        }
+        else
+        {
+            // Submenús de acción
+            if (tecla == '1')
+            {
+                if (menuActual == 1)
+                {
+                    if (!ledVerdeEncendido)
+                        toggleLedVerde();
+                }
+                else if (menuActual == 2)
+                {
+                    if (!ledRojoEncendido)
+                        toggleLedRojo();
+                }
+                else if (menuActual == 3)
+                {
+                    if (!motorEncendido)
+                        motorOn();
+                }
+            }
+            else if (tecla == '2')
+            {
+                if (menuActual == 1)
+                {
+                    if (ledVerdeEncendido)
+                        toggleLedVerde();
+                }
+                else if (menuActual == 2)
+                {
+                    if (ledRojoEncendido)
+                        toggleLedRojo();
+                }
+                else if (menuActual == 3)
+                {
+                    if (motorEncendido)
+                        motorOff();
+                }
+            }
+            else if (tecla == '3')
+            {
+                lcd.clear();
+                if (menuActual == 1)
+                    lcd.print(ledVerdeEncendido ? "LED V: ON" : "LED V: OFF");
+                else if (menuActual == 2)
+                    lcd.print(ledRojoEncendido ? "LED R: ON" : "LED R: OFF");
+                else if (menuActual == 3)
+                    lcd.print(motorEncendido ? "Motor: ON" : "Motor: OFF");
+                delay(1500);
+                mostrarSubmenu(menuActual == 1 ? "LED Verde" : menuActual == 2 ? "LED Rojo" : "Motor");
+            }
+            else if (tecla == 'D')
+            {
+                // Volver al menú principal
+                enSubmenu = false;
+                mostrarMenuPrincipal();
+            }
+        }
+    }
+}
+
+// ============================================================================
 // SETUP
 // ============================================================================
 void setup()
@@ -240,7 +374,7 @@ void loop()
     {
         if (WiFi.status() != WL_CONNECTED)
         {
-            Serial.println("⚠️ WiFi desconectado, reconectando...");
+            Serial.println("WiFi desconectado, reconectando...");
             conectarWiFi();
         }
         lastWiFiCheck = millis();

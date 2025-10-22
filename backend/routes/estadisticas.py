@@ -79,7 +79,7 @@ def indicadores_generales():
         }), 200
 
     except Exception as e:
-        print("❌ Error en indicadores:", e)
+        print("Error en indicadores:", e)
         return jsonify({"error": str(e)}), 500
 
     finally:
@@ -108,7 +108,7 @@ def acciones_diarias():
         return jsonify({"labels": fechas, "data": totales}), 200
 
     except Exception as e:
-        print("❌ Error en acciones_diarias:", e)
+        print("Error en acciones_diarias:", e)
         return jsonify({"error": str(e)}), 500
 
     finally:
@@ -137,7 +137,7 @@ def acciones_por_dispositivo():
         return jsonify({"labels": dispositivos, "data": totales}), 200
 
     except Exception as e:
-        print("❌ Error en acciones_por_dispositivo:", e)
+        print("Error en acciones_por_dispositivo:", e)
         return jsonify({"error": str(e)}), 500
 
     finally:
@@ -165,7 +165,7 @@ def acciones_por_tipo():
         return jsonify({"labels": tipos, "data": totales}), 200
 
     except Exception as e:
-        print("❌ Error en acciones_por_tipo:", e)
+        print("Error en acciones_por_tipo:", e)
         return jsonify({"error": str(e)}), 500
 
     finally:
@@ -195,7 +195,7 @@ def acciones_por_usuario():
         return jsonify({"labels": usuarios, "data": totales}), 200
 
     except Exception as e:
-        print("❌ Error en acciones_por_usuario:", e)
+        print("Error en acciones_por_usuario:", e)
         return jsonify({"error": str(e)}), 500
 
     finally:
