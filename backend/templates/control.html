@@ -217,6 +217,7 @@
   document.addEventListener("DOMContentLoaded", () => {
     cargarEstados();
     cargarHistorial();
+    setInterval(cargarEstados, 2000);
   });
 </script>
 {% endblock %}
