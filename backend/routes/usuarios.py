@@ -151,14 +151,14 @@ def cerrar_sesion():
 @usuarios_bp.route('/activo', methods=['GET'])
 def obtener_usuario_activo():
     """
-    Devuelve el nombre del último usuario con sesión activa (sin fecha_fin).
-    Esto se puede usar para mostrar en el LCD del ESP32.
+    Devuelve el último usuario con sesión activa (sin fecha_fin).
+    Incluye el ID del usuario para que el ESP32 pueda usarlo.
     """
     try:
         conexion = get_connection()
-        with conexion.cursor() as cursor:
+        with conexion.cursor(dictionary=True) as cursor:
             cursor.execute("""
-                SELECT u.nombre, u.username, s.fecha_inicio
+                SELECT u.id AS id, u.nombre AS nombre, u.username AS username, s.fecha_inicio
                 FROM sesiones s
                 JOIN usuarios u ON s.usuario_id = u.id
                 WHERE s.fecha_fin IS NULL
@@ -170,7 +170,7 @@ def obtener_usuario_activo():
         if not sesion:
             return jsonify({"success": False, "message": "No hay usuarios activos"}), 404
 
-        # Convertir hora a Colombia
+        # Convertir hora a zona horaria de Colombia
         tz_col = pytz.timezone("America/Bogota")
         fecha_local = sesion["fecha_inicio"].replace(tzinfo=pytz.UTC).astimezone(tz_col)
         sesion["fecha_inicio"] = fecha_local.strftime("%Y-%m-%d %H:%M:%S")
@@ -185,4 +185,5 @@ def obtener_usuario_activo():
         return jsonify({"error": str(e)}), 500
 
     finally:
-        conexion.close()
+        if conexion:
+            conexion.close()
