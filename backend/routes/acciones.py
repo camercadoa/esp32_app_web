@@ -67,8 +67,7 @@ def registrar_accion():
                         'dispositivo_id': dispositivo_id,
                         'accion': accion,
                         'nuevo_estado': nuevo_estado
-                    },
-                    broadcast=True
+                    }
                 )
 
         return jsonify({
