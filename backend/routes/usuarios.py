@@ -108,13 +108,50 @@ def login_usuario():
 
 
 # ------------------------------------------------------------
+# Cerrar sesión
+# ------------------------------------------------------------
+@usuarios_bp.route('/logout', methods=['POST'])
+def cerrar_sesion():
+    """
+    Marca la sesión más reciente del usuario como cerrada (fecha_fin).
+    Se espera un JSON con: usuario_id
+    """
+    try:
+        data = request.get_json()
+        usuario_id = data.get("usuario_id")
+
+        if not usuario_id:
+            return jsonify({"error": "El campo 'usuario_id' es obligatorio"}), 400
+
+        conexion = get_connection()
+        with conexion.cursor() as cursor:
+            cursor.execute("""
+                UPDATE sesiones
+                SET fecha_fin = NOW()
+                WHERE usuario_id = %s AND fecha_fin IS NULL
+                ORDER BY fecha_inicio DESC
+                LIMIT 1
+            """, (usuario_id,))
+            conexion.commit()
+
+        return jsonify({"success": True, "message": "Sesión cerrada correctamente"}), 200
+
+    except Exception as e:
+        print("Error en cerrar_sesion:", e)
+        return jsonify({"error": str(e)}), 500
+
+    finally:
+        conexion.close()
+
+
+# ------------------------------------------------------------
 # Consultar usuario activo más reciente
 # (para mostrar en el LCD del ESP32)
 # ------------------------------------------------------------
 @usuarios_bp.route('/activo', methods=['GET'])
 def obtener_usuario_activo():
     """
-    Devuelve el nombre del último usuario que inició sesión.
+    Devuelve el nombre del último usuario con sesión activa (sin fecha_fin).
     Esto se puede usar para mostrar en el LCD del ESP32.
     """
     try:
@@ -124,6 +161,7 @@ def obtener_usuario_activo():
                 SELECT u.nombre, u.username, s.fecha_inicio
                 FROM sesiones s
                 JOIN usuarios u ON s.usuario_id = u.id
+                WHERE s.fecha_fin IS NULL
                 ORDER BY s.fecha_inicio DESC
                 LIMIT 1
             """)
