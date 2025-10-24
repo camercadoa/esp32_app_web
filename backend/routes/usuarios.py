@@ -156,7 +156,7 @@ def obtener_usuario_activo():
     """
     try:
         conexion = get_connection()
-        with conexion.cursor(dictionary=True) as cursor:
+        with conexion.cursor() as cursor:
             cursor.execute("""
                 SELECT u.id AS id, u.nombre AS nombre, u.username AS username, s.fecha_inicio
                 FROM sesiones s
