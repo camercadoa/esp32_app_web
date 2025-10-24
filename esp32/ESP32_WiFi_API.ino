@@ -4,58 +4,52 @@
 #include <WiFi.h>
 #include <HTTPClient.h>
 #include <Keypad.h>
+#include <ArduinoJson.h>
 
 // ============================================================================
-// CONFIGURACIÓN WiFi - ¡CAMBIAR ESTOS VALORES!
+// CONFIGURACIÓN WiFi
 // ============================================================================
-const char *ssid = "TU_NOMBRE_WIFI";
-const char *password = "TU_PASSWORD_WIFI";
+const char *ssid = "Camilo";
+const char *password = "redmin13";
 
-// URL de tu API
-const char *apiURL = "http://TU_IP_LOCAL:5000/api/acciones";
+// URL base de tu API
+const char *apiBaseURL = "http://10.110.150.231:5000/api";
 
 // ============================================================================
 // CONFIGURACIÓN LCD
 // ============================================================================
-int lcdColumnas = 16;
-int lcdFilas = 2;
-LiquidCrystal_I2C lcd(0x27, lcdColumnas, lcdFilas);
+LiquidCrystal_I2C lcd(0x27, 16, 2);
 
 // ============================================================================
-// CONFIGURACIÓN MOTOR (PWM)
+// CONFIGURACIÓN MOTOR Y LEDS
 // ============================================================================
 int motor1Pin1 = 12;
 int motor1Pin2 = 14;
 int enable1Pin = 13;
-int dutyCycle = 200; // Velocidad del motor (0-255)
+int dutyCycle = 200;
 
-// ============================================================================
-// CONFIGURACIÓN BOTONES Y LEDS
-// ============================================================================
 int btnMotorOn = 27;
 int btnMotorOff = 26;
 int btnLedVerde = 25;
 int btnLedRojo = 33;
+int ledVerdePin = 2;
+int ledRojoPin = 32;
 
-int ledVerdePin = 15;
-int ledRojoPin = 2;
-
-// Estados
 bool motorEncendido = false;
 bool ledVerdeEncendido = false;
 bool ledRojoEncendido = false;
 
-// Estados anteriores de botones
-bool lastBtnOnState = LOW;
-bool lastBtnOffState = LOW;
-bool lastBtnLedVerde = LOW;
-bool lastBtnLedRojo = LOW;
-
 unsigned long lastDebounceTime = 0;
 unsigned long debounceDelay = 50;
 
-// Usuario por defecto (admin tiene id=1)
+// IDs de dispositivos
+const int DISP_MOTOR_ID = 1;
+const int DISP_LED_VERDE_ID = 2;
+const int DISP_LED_ROJO_ID = 3;
+
+// Usuario activo
 int usuarioId = 1;
+String nombreUsuario = "Desconocido";
 
 // ============================================================================
 // CONFIGURACIÓN TECLADO MATRICIAL
@@ -68,30 +62,32 @@ char teclas[FILAS][COLUMNAS] = {
     {'7', '8', '9', 'C'},
     {'*', '0', '#', 'D'}};
 
-// Pines:
-//      F1=D19, F2=D18, F3=D5, F4=TX2(17)
-//      C1=RX2(16), C2=D4, C3=D2, C4=D15
-byte pinesFilas[FILAS] = {19, 18, 5, 17};
-byte pinesColumnas[COLUMNAS] = {16, 4, 2, 15};
-
+byte pinesFilas[FILAS] = {23, 19, 18, 5};
+byte pinesColumnas[COLUMNAS] = {17, 16, 4, 15};
 Keypad teclado = Keypad(makeKeymap(teclas), pinesFilas, pinesColumnas, FILAS, COLUMNAS);
 
 // ============================================================================
-// FUNCIONES WiFi
+// FUNCIONES WiFi y API
 // ============================================================================
-void conectarWiFi()
+void mostrarEstado(const char *linea1, const char *linea2)
 {
     lcd.clear();
     lcd.setCursor(0, 0);
-    lcd.print("Conectando WiFi");
+    lcd.print(linea1);
+    lcd.setCursor(0, 1);
+    lcd.print(linea2);
+}
 
+void conectarWiFi()
+{
+    lcd.clear();
+    lcd.print("Conectando...");
     WiFi.begin(ssid, password);
 
     int intentos = 0;
     while (WiFi.status() != WL_CONNECTED && intentos < 20)
     {
         delay(500);
-        Serial.print(".");
         lcd.setCursor(intentos % 16, 1);
         lcd.print(".");
         intentos++;
@@ -99,30 +95,53 @@ void conectarWiFi()
 
     if (WiFi.status() == WL_CONNECTED)
     {
-        Serial.println("\nWiFi conectado");
-        Serial.print("IP: ");
-        Serial.println(WiFi.localIP());
-
         lcd.clear();
-        lcd.setCursor(0, 0);
         lcd.print("WiFi OK");
         lcd.setCursor(0, 1);
         lcd.print(WiFi.localIP());
-        delay(2000);
+        delay(1500);
     }
     else
     {
-        Serial.println("\nNo se pudo conectar a WiFi");
         lcd.clear();
-        lcd.setCursor(0, 0);
         lcd.print("WiFi Error");
         lcd.setCursor(0, 1);
         lcd.print("Modo offline");
-        delay(2000);
+        delay(1500);
     }
 }
 
-void enviarAccionAPI(String dispositivo, String accion)
+// Obtener usuario activo desde la API
+void obtenerUsuarioActivo()
+{
+    if (WiFi.status() != WL_CONNECTED)
+        return;
+
+    String url = String(apiBaseURL) + "/usuarios/activo";
+    HTTPClient http;
+    http.begin(url);
+    int httpCode = http.GET();
+
+    if (httpCode == 200)
+    {
+        String payload = http.getString();
+        DynamicJsonDocument doc(512);
+        DeserializationError err = deserializeJson(doc, payload);
+
+        if (!err && doc["success"])
+        {
+            usuarioId = doc["usuario_activo"]["id"].as<int>();
+            nombreUsuario = doc["usuario_activo"]["nombre"].as<String>();
+            mostrarEstado("Usuario:", nombreUsuario.c_str());
+            delay(2000);
+        }
+    }
+
+    http.end();
+}
+
+// Enviar acción a la API
+void enviarAccionAPI(int dispositivoId, String accion)
 {
     if (WiFi.status() != WL_CONNECTED)
     {
@@ -130,102 +149,123 @@ void enviarAccionAPI(String dispositivo, String accion)
         return;
     }
 
+    String url = String(apiBaseURL) + "/acciones/registrar";
     HTTPClient http;
-    http.begin(apiURL);
+    http.begin(url);
     http.addHeader("Content-Type", "application/json");
 
-    // Construir JSON
     String jsonData = "{";
     jsonData += "\"usuario_id\":" + String(usuarioId) + ",";
-    jsonData += "\"dispositivo\":\"" + dispositivo + "\",";
+    jsonData += "\"dispositivo_id\":" + String(dispositivoId) + ",";
     jsonData += "\"accion\":\"" + accion + "\"";
     jsonData += "}";
 
-    Serial.println("📡 Enviando a API: " + jsonData);
-
-    int httpResponseCode = http.POST(jsonData);
-
-    if (httpResponseCode > 0)
-    {
-        String response = http.getString();
-        Serial.println("Respuesta API (" + String(httpResponseCode) + "): " + response);
-    }
-    else
-    {
-        Serial.print("Error HTTP: ");
-        Serial.println(httpResponseCode);
-    }
-
+    int code = http.POST(jsonData);
     http.end();
+
+    Serial.printf("POST %s -> %d\n", url.c_str(), code);
 }
 
 // ============================================================================
 // FUNCIONES DE CONTROL
 // ============================================================================
-void mostrarEstado(const char *componente, const char *estado)
-{
-    lcd.clear();
-    lcd.setCursor(0, 0);
-    lcd.print(componente);
-    lcd.setCursor(0, 1);
-    lcd.print(estado);
-}
-
 void motorOn()
 {
-    digitalWrite(motor1Pin1, HIGH);
-    digitalWrite(motor1Pin2, LOW);
-    analogWrite(enable1Pin, dutyCycle);
-
-    motorEncendido = true;
-    mostrarEstado("Motor", "ON");
-    Serial.println("MOTOR:ENCENDER");
-    enviarAccionAPI("MOTOR", "ENCENDER");
+    if (!motorEncendido)
+    {
+        digitalWrite(motor1Pin1, HIGH);
+        digitalWrite(motor1Pin2, LOW);
+        analogWrite(enable1Pin, dutyCycle);
+        motorEncendido = true;
+        mostrarEstado("Motor", "ON");
+        enviarAccionAPI(DISP_MOTOR_ID, "ENCENDER");
+    }
+    else
+    {
+        mostrarEstado("Motor", "Ya esta ON");
+    }
 }
 
 void motorOff()
 {
-    digitalWrite(motor1Pin1, LOW);
-    digitalWrite(motor1Pin2, LOW);
-    analogWrite(enable1Pin, 0);
-
-    motorEncendido = false;
-    mostrarEstado("Motor", "OFF");
-    Serial.println("MOTOR:APAGAR");
-    enviarAccionAPI("MOTOR", "APAGAR");
+    if (motorEncendido)
+    {
+        digitalWrite(motor1Pin1, LOW);
+        digitalWrite(motor1Pin2, LOW);
+        analogWrite(enable1Pin, 0);
+        motorEncendido = false;
+        mostrarEstado("Motor", "OFF");
+        enviarAccionAPI(DISP_MOTOR_ID, "APAGAR");
+    }
+    else
+    {
+        mostrarEstado("Motor", "Ya esta OFF");
+    }
 }
 
-void toggleLedVerde()
+void ledVerdeOn()
 {
-    ledVerdeEncendido = !ledVerdeEncendido;
-    digitalWrite(ledVerdePin, ledVerdeEncendido ? HIGH : LOW);
-
-    mostrarEstado("Led Verde", ledVerdeEncendido ? "ON" : "OFF");
-    Serial.println(ledVerdeEncendido ? "LED_VERDE:ENCENDER" : "LED_VERDE:APAGAR");
-    enviarAccionAPI("LED_VERDE", ledVerdeEncendido ? "ENCENDER" : "APAGAR");
+    if (!ledVerdeEncendido)
+    {
+        ledVerdeEncendido = true;
+        digitalWrite(ledVerdePin, HIGH);
+        mostrarEstado("LED Verde", "ON");
+        enviarAccionAPI(DISP_LED_VERDE_ID, "ENCENDER");
+    }
+    else
+        mostrarEstado("LED Verde", "Ya ON");
 }
 
-void toggleLedRojo()
+void ledVerdeOff()
 {
-    ledRojoEncendido = !ledRojoEncendido;
-    digitalWrite(ledRojoPin, ledRojoEncendido ? HIGH : LOW);
+    if (ledVerdeEncendido)
+    {
+        ledVerdeEncendido = false;
+        digitalWrite(ledVerdePin, LOW);
+        mostrarEstado("LED Verde", "OFF");
+        enviarAccionAPI(DISP_LED_VERDE_ID, "APAGAR");
+    }
+    else
+        mostrarEstado("LED Verde", "Ya OFF");
+}
 
-    mostrarEstado("Led Rojo", ledRojoEncendido ? "ON" : "OFF");
-    Serial.println(ledRojoEncendido ? "LED_ROJO:ENCENDER" : "LED_ROJO:APAGAR");
-    enviarAccionAPI("LED_ROJO", ledRojoEncendido ? "ENCENDER" : "APAGAR");
+void ledRojoOn()
+{
+    if (!ledRojoEncendido)
+    {
+        ledRojoEncendido = true;
+        digitalWrite(ledRojoPin, HIGH);
+        mostrarEstado("LED Rojo", "ON");
+        enviarAccionAPI(DISP_LED_ROJO_ID, "ENCENDER");
+    }
+    else
+        mostrarEstado("LED Rojo", "Ya ON");
+}
+
+void ledRojoOff()
+{
+    if (ledRojoEncendido)
+    {
+        ledRojoEncendido = false;
+        digitalWrite(ledRojoPin, LOW);
+        mostrarEstado("LED Rojo", "OFF");
+        enviarAccionAPI(DISP_LED_ROJO_ID, "APAGAR");
+    }
+    else
+        mostrarEstado("LED Rojo", "Ya OFF");
 }
 
 // ============================================================================
-// FUNCIONES DEL TECLADO
+// TECLADO
 // ============================================================================
-int menuActual = 0; // 0 = principal, 1=LED verde, 2=LED rojo, 3=motor, 4=estados
+int menuActual = 0;
 bool enSubmenu = false;
 
 void mostrarMenuPrincipal()
 {
     lcd.clear();
     lcd.setCursor(0, 0);
-    lcd.print("1:Led V 2:Led R");
+    lcd.print("1:LedV 2:LedR");
     lcd.setCursor(0, 1);
     lcd.print("3:Motor 4:BD");
 }
@@ -242,89 +282,59 @@ void mostrarSubmenu(String nombre)
 void manejarTeclado()
 {
     char tecla = teclado.getKey();
-    if (tecla)
+    if (!tecla)
+        return;
+
+    if (!enSubmenu)
     {
-        Serial.print("Tecla presionada: ");
-        Serial.println(tecla);
-
-        if (!enSubmenu)
+        if (tecla >= '1' && tecla <= '3')
         {
-            if (tecla >= '1' && tecla <= '4')
-            {
-                menuActual = tecla - '0';
-                enSubmenu = true;
-
-                if (menuActual == 1)
-                    mostrarSubmenu("LED Verde");
-                else if (menuActual == 2)
-                    mostrarSubmenu("LED Rojo");
-                else if (menuActual == 3)
-                    mostrarSubmenu("Motor");
-                else if (menuActual == 4)
-                {
-                    lcd.clear();
-                    lcd.print("Consultando BD...");
-                    // Aquí en Fase 3 haremos la consulta a la API
-                }
-            }
+            menuActual = tecla - '0';
+            enSubmenu = true;
+            if (menuActual == 1)
+                mostrarSubmenu("LED Verde");
+            else if (menuActual == 2)
+                mostrarSubmenu("LED Rojo");
+            else if (menuActual == 3)
+                mostrarSubmenu("Motor");
         }
-        else
+    }
+    else
+    {
+        if (tecla == '1')
         {
-            // Submenús de acción
-            if (tecla == '1')
-            {
-                if (menuActual == 1)
-                {
-                    if (!ledVerdeEncendido)
-                        toggleLedVerde();
-                }
-                else if (menuActual == 2)
-                {
-                    if (!ledRojoEncendido)
-                        toggleLedRojo();
-                }
-                else if (menuActual == 3)
-                {
-                    if (!motorEncendido)
-                        motorOn();
-                }
-            }
-            else if (tecla == '2')
-            {
-                if (menuActual == 1)
-                {
-                    if (ledVerdeEncendido)
-                        toggleLedVerde();
-                }
-                else if (menuActual == 2)
-                {
-                    if (ledRojoEncendido)
-                        toggleLedRojo();
-                }
-                else if (menuActual == 3)
-                {
-                    if (motorEncendido)
-                        motorOff();
-                }
-            }
-            else if (tecla == '3')
-            {
-                lcd.clear();
-                if (menuActual == 1)
-                    lcd.print(ledVerdeEncendido ? "LED V: ON" : "LED V: OFF");
-                else if (menuActual == 2)
-                    lcd.print(ledRojoEncendido ? "LED R: ON" : "LED R: OFF");
-                else if (menuActual == 3)
-                    lcd.print(motorEncendido ? "Motor: ON" : "Motor: OFF");
-                delay(1500);
-                mostrarSubmenu(menuActual == 1 ? "LED Verde" : menuActual == 2 ? "LED Rojo" : "Motor");
-            }
-            else if (tecla == 'D')
-            {
-                // Volver al menú principal
-                enSubmenu = false;
-                mostrarMenuPrincipal();
-            }
+            if (menuActual == 1)
+                ledVerdeOn();
+            else if (menuActual == 2)
+                ledRojoOn();
+            else if (menuActual == 3)
+                motorOn();
+        }
+        else if (tecla == '2')
+        {
+            if (menuActual == 1)
+                ledVerdeOff();
+            else if (menuActual == 2)
+                ledRojoOff();
+            else if (menuActual == 3)
+                motorOff();
+        }
+        else if (tecla == '3')
+        {
+            lcd.clear();
+            if (menuActual == 1)
+                lcd.print(ledVerdeEncendido ? "LED V: ON" : "LED V: OFF");
+            else if (menuActual == 2)
+                lcd.print(ledRojoEncendido ? "LED R: ON" : "LED R: OFF");
+            else if (menuActual == 3)
+                lcd.print(motorEncendido ? "Motor: ON" : "Motor: OFF");
+            delay(1500);
+            mostrarSubmenu(menuActual == 1 ? "LED Verde" : menuActual == 2 ? "LED Rojo" : "Motor");
+        }
+        else if (tecla == 'D')
+        {
+            enSubmenu = false;
+            mostrarMenuPrincipal();
         }
     }
 }
@@ -334,18 +344,10 @@ void manejarTeclado()
 // ============================================================================
 void setup()
 {
-    Serial.begin(9600);
-
-    // Inicializar LCD
+    Serial.begin(115200);
     lcd.init();
     lcd.backlight();
 
-    // Conectar WiFi
-    conectarWiFi();
-
-    mostrarEstado("Sistema Listo", "Pulsa un boton");
-
-    // Configurar pines
     pinMode(motor1Pin1, OUTPUT);
     pinMode(motor1Pin2, OUTPUT);
     pinMode(enable1Pin, OUTPUT);
@@ -356,11 +358,11 @@ void setup()
     pinMode(btnLedVerde, INPUT);
     pinMode(btnLedRojo, INPUT);
 
-    // Inicializar apagados
-    digitalWrite(ledVerdePin, LOW);
-    digitalWrite(ledRojoPin, LOW);
-    digitalWrite(motor1Pin1, LOW);
-    digitalWrite(motor1Pin2, LOW);
+    conectarWiFi();
+    obtenerUsuarioActivo();
+
+    mostrarEstado("Sistema Listo", "Pulsa tecla");
+    mostrarMenuPrincipal();
 }
 
 // ============================================================================
@@ -368,105 +370,13 @@ void setup()
 // ============================================================================
 void loop()
 {
-    // Verificar conexión WiFi cada 30 segundos
-    static unsigned long lastWiFiCheck = 0;
-    if (millis() - lastWiFiCheck > 30000)
+    // Actualizar usuario activo cada 30 seg
+    static unsigned long lastUserCheck = 0;
+    if (millis() - lastUserCheck > 30000)
     {
-        if (WiFi.status() != WL_CONNECTED)
-        {
-            Serial.println("WiFi desconectado, reconectando...");
-            conectarWiFi();
-        }
-        lastWiFiCheck = millis();
+        obtenerUsuarioActivo();
+        lastUserCheck = millis();
     }
 
-    // Control desde Serial (compatible con app de escritorio)
-    if (Serial.available() > 0)
-    {
-        String comando = Serial.readStringUntil('\n');
-        comando.trim();
-
-        if (comando == "ON")
-        {
-            motorOn();
-        }
-        else if (comando == "OFF")
-        {
-            motorOff();
-        }
-        else if (comando == "LED_VERDE_ON")
-        {
-            if (!ledVerdeEncendido)
-                toggleLedVerde();
-        }
-        else if (comando == "LED_VERDE_OFF")
-        {
-            if (ledVerdeEncendido)
-                toggleLedVerde();
-        }
-        else if (comando == "LED_ROJO_ON")
-        {
-            if (!ledRojoEncendido)
-                toggleLedRojo();
-        }
-        else if (comando == "LED_ROJO_OFF")
-        {
-            if (ledRojoEncendido)
-                toggleLedRojo();
-        }
-    }
-
-    // Leer botones físicos
-    bool currentBtnOnState = digitalRead(btnMotorOn);
-    bool currentBtnOffState = digitalRead(btnMotorOff);
-    bool currentBtnLedVerde = digitalRead(btnLedVerde);
-    bool currentBtnLedRojo = digitalRead(btnLedRojo);
-
-    // Motor ON
-    if (currentBtnOnState == LOW && lastBtnOnState == HIGH)
-    {
-        if ((millis() - lastDebounceTime) > debounceDelay)
-        {
-            if (!motorEncendido)
-            {
-                motorOn();
-            }
-            lastDebounceTime = millis();
-        }
-    }
-
-    // Motor OFF
-    if (currentBtnOffState == LOW && lastBtnOffState == HIGH)
-    {
-        if ((millis() - lastDebounceTime) > debounceDelay)
-        {
-            if (motorEncendido)
-            {
-                motorOff();
-            }
-            lastDebounceTime = millis();
-        }
-    }
-
-    // LED Verde
-    if (currentBtnLedVerde == HIGH && lastBtnLedVerde == LOW)
-    {
-        toggleLedVerde();
-        delay(300);
-    }
-
-    // LED Rojo
-    if (currentBtnLedRojo == HIGH && lastBtnLedRojo == LOW)
-    {
-        toggleLedRojo();
-        delay(300);
-    }
-
-    // Guardar estados
-    lastBtnOnState = currentBtnOnState;
-    lastBtnOffState = currentBtnOffState;
-    lastBtnLedVerde = currentBtnLedVerde;
-    lastBtnLedRojo = currentBtnLedRojo;
-
-    delay(10);
+    manejarTeclado();
 }
