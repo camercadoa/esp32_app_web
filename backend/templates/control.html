@@ -88,6 +88,7 @@
 <!-- Alerta -->
 <div id="alerta" class="alert position-fixed bottom-0 end-0 m-3 d-none shadow" style="z-index: 1050"></div>
 
+<script src="https://cdn.socket.io/4.7.4/socket.io.min.js"></script>
 {% endblock %}
 
 {% block extra_js %}
@@ -217,7 +218,24 @@
   document.addEventListener("DOMContentLoaded", () => {
     cargarEstados();
     cargarHistorial();
-    setInterval(cargarEstados, 2000);
+
+    // Conectar con el servidor WebSocket
+    const socket = io();
+
+    socket.on("connect", () => {
+      console.log("Conectado al servidor WebSocket");
+    });
+
+    // Escuchar actualizaciones en tiempo real
+    socket.on("estado_actualizado", (data) => {
+      console.log("Evento recibido:", data);
+
+      // Actualizar UI del dispositivo correspondiente
+      const id = data.dispositivo_id;
+      mostrarAlerta(`El dispositivo ${id} fue ${data.nuevo_estado}`, "info");
+      cargarEstados();
+      cargarHistorial();
+    });
   });
 </script>
 {% endblock %}

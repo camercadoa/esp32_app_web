@@ -1,3 +1,10 @@
+socketio = None
+
+def set_socketio(sio):
+    global socketio
+    socketio = sio
+
+
 from flask import Blueprint, request, jsonify
 from config.database import get_connection
 
@@ -20,7 +27,6 @@ def registrar_accion():
     try:
         connection = get_connection()
         with connection.cursor() as cursor:
-            # Verificar estado actual del dispositivo
             cursor.execute(
                 "SELECT estado_actual FROM dispositivos WHERE id = %s", (dispositivo_id,))
             dispositivo = cursor.fetchone()
@@ -29,15 +35,15 @@ def registrar_accion():
 
             estado_actual = dispositivo['estado_actual']
 
-            # Determinar si hay cambio de estado o no
             if accion == 'ENCENDER' and estado_actual == 'ENCENDIDO':
                 resultado = 'SIN_CAMBIO'
                 comentario = 'El dispositivo ya está ENCENDIDO'
+                nuevo_estado = estado_actual
             elif accion == 'APAGAR' and estado_actual == 'APAGADO':
                 resultado = 'SIN_CAMBIO'
                 comentario = 'El dispositivo ya está APAGADO'
+                nuevo_estado = estado_actual
             else:
-                # Actualizar estado en tabla dispositivos
                 nuevo_estado = 'ENCENDIDO' if accion == 'ENCENDER' else 'APAGADO'
                 cursor.execute(
                     "UPDATE dispositivos SET estado_actual = %s WHERE id = %s",
@@ -46,13 +52,24 @@ def registrar_accion():
                 resultado = 'OK'
                 comentario = f'Dispositivo {nuevo_estado} correctamente'
 
-            # Registrar acción
             cursor.execute("""
                 INSERT INTO acciones (usuario_id, dispositivo_id, accion, resultado, comentario)
                 VALUES (%s, %s, %s, %s, %s)
             """, (usuario_id, dispositivo_id, accion, resultado, comentario))
 
             connection.commit()
+
+            # Emitir evento WebSocket en tiempo real
+            if socketio and resultado == 'OK':
+                socketio.emit(
+                    'estado_actualizado',
+                    {
+                        'dispositivo_id': dispositivo_id,
+                        'accion': accion,
+                        'nuevo_estado': nuevo_estado
+                    },
+                    broadcast=True
+                )
 
         return jsonify({
             "message": "Acción registrada correctamente",
